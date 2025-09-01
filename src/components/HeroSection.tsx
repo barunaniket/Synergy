@@ -60,7 +60,7 @@ function HeroSection() {
               className="flex flex-col gap-4 min-[400px]:flex-row justify-center lg:justify-start"
             >
               <a
-                href="/search"
+                href="/find-a-hospital"
                 className="inline-flex h-12 items-center justify-center rounded-md bg-primary px-8 text-sm font-medium text-white shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
               >
                 Start Your Search

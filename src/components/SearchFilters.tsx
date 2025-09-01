@@ -1,6 +1,31 @@
 import { Search, MapPin, DollarSign, HeartPulse } from 'lucide-react';
+import React from 'react';
 
-function SearchFilters() {
+// Define the types for the props we are receiving
+interface SearchFiltersProps {
+  filters: {
+    location: string;
+    organ: string;
+    budget: string;
+  };
+  setFilters: React.Dispatch<React.SetStateAction<{
+    location: string;
+    organ: string;
+    budget: string;
+  }>>;
+}
+
+function SearchFilters({ filters, setFilters }: SearchFiltersProps) {
+
+  // Handle input changes and update the parent state
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { id, value } = e.target;
+    setFilters(prevFilters => ({
+      ...prevFilters,
+      [id]: value,
+    }));
+  };
+
   return (
     <div className="w-full p-6 bg-surface rounded-xl shadow-md border border-border">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -12,7 +37,9 @@ function SearchFilters() {
           <input
             type="text"
             id="location"
-            placeholder="City, State, or Zip Code"
+            placeholder="Search by name or location..."
+            value={filters.location}
+            onChange={handleChange}
             className="w-full pl-10 pr-4 py-2 border border-border rounded-md focus:ring-primary focus:border-primary"
           />
         </div>
@@ -23,6 +50,8 @@ function SearchFilters() {
           <HeartPulse className="absolute left-3 top-10 h-5 w-5 text-gray-400" />
           <select
             id="organ"
+            value={filters.organ}
+            onChange={handleChange}
             className="w-full pl-10 pr-4 py-2 border border-border rounded-md focus:ring-primary focus:border-primary appearance-none"
           >
             <option>Any Organ</option>
@@ -42,13 +71,15 @@ function SearchFilters() {
             type="number"
             id="budget"
             placeholder="e.g., 50000"
+            value={filters.budget}
+            onChange={handleChange}
             className="w-full pl-10 pr-4 py-2 border border-border rounded-md focus:ring-primary focus:border-primary"
           />
         </div>
 
-        {/* Search Button */}
+        {/* Search Button (This button doesn't need an onClick yet since filtering is live) */}
         <div className="flex items-end">
-          <button className="w-full h-12 flex items-center justify-center bg-primary text-white rounded-md shadow transition-colors hover:bg-primary/90">
+          <button className="w-full h-12 flex items-center justify-center bg-primary text-white rounded-md shadow transition-colors hover:bg-primary/90 cursor-not-allowed" disabled>
             <Search className="h-5 w-5 mr-2" />
             Search
           </button>
@@ -60,4 +91,3 @@ function SearchFilters() {
 }
 
 export default SearchFilters;
-

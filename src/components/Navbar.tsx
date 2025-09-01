@@ -4,7 +4,7 @@ import { HeartPulse, Menu, X } from 'lucide-react';
 
 const navLinks = [
   { name: 'Home', href: '/' },
-  { name: 'Find a Hospital', href: '/search' },
+  { name: 'Find a Hospital', href: '/find-a-hospital' },
   { name: 'Services', href: '/services' },
   { name: 'About Us', href: '/about' },
   { name: 'Contact', href: '/contact' },
@@ -26,11 +26,16 @@ export function Navbar() {
     initial: {
       backgroundColor: 'rgba(255, 255, 255, 0)',
       boxShadow: 'none',
+      borderBottom: '1px solid rgba(229, 231, 235, 0)', // Start with a transparent border
     },
     scrolled: {
-      backgroundColor: 'rgba(255, 255, 255, 0.8)',
+      // More opaque background for better readability
+      backgroundColor: 'rgba(255, 255, 255, 0.9)', 
       boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
-      backdropFilter: 'blur(5px)',
+      // Stronger blur for a more pronounced glass effect
+      backdropFilter: 'blur(10px)', 
+      // Add a subtle border to create a clear edge
+      borderBottom: '1px solid rgba(229, 231, 235, 0.6)', 
     },
   };
   
@@ -122,4 +127,3 @@ export function Navbar() {
     </>
   );
 }
-
