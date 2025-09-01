@@ -2,8 +2,12 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-body {
-  /* We only need to set the base colors here now, as the pattern is in App.tsx */
-  @apply bg-background text-text-primary;
+/* We remove all background styling from here */
+:root {
+  --x: 50%;
+  --y: 50%;
 }
 
+body {
+  @apply bg-background text-text-primary;
+}

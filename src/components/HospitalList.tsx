@@ -50,7 +50,6 @@ function HospitalList({ hospitals, isLoading }: HospitalListProps) {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      // Add layout prop to animate the container itself if its size changes
       layout 
     >
       <AnimatePresence>
@@ -58,8 +57,7 @@ function HospitalList({ hospitals, isLoading }: HospitalListProps) {
           <motion.div 
             key={hospital.id} 
             variants={itemVariants}
-            exit="exit" // Specify the exit animation
-            // Add layout prop to animate position changes
+            exit="exit"
             layout 
           >
             <HospitalCard hospital={hospital} />

@@ -4,13 +4,11 @@ import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import FindHospitalPage from './pages/FindHospitalPage';
 
-// This Layout component ensures the Navbar and Footer appear on every page
 const Layout = () => {
   return (
     <div className="relative z-10">
       <Navbar />
       <main>
-        {/* The Outlet component will render the current page */}
         <Outlet />
       </main>
       <Footer />
@@ -19,25 +17,49 @@ const Layout = () => {
 };
 
 function App() {
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const { currentTarget: target } = e;
+    const rect = target.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    target.style.setProperty("--x", `${x}px`);
+    target.style.setProperty("--y", `${y}px`);
+  };
+
   return (
-    <div className="min-h-screen bg-background text-text-primary">
+    <div 
+      className="min-h-screen bg-background text-text-primary" 
+      onMouseMove={handleMouseMove}
+      style={{
+        backgroundImage: `
+          radial-gradient(
+            circle at var(--x) var(--y),
+            hsla(175, 100%, 70%, 0.25),
+            transparent 30vw
+          ),
+          /* Layer 2: The subtle dot grid using a light, semi-transparent color from your theme */
+          radial-gradient(
+            circle,
+            rgba(156, 163, 175, 0.5) 1px, /* text-secondary at 10% opacity */
+            transparent 1px
+          )
+        `,
+        backgroundSize: `auto, 20px 20px`,
+      }}
+    >
       <div className="relative">
-        <div className="absolute inset-0 z-0 bg-[radial-gradient(#D1D5DB_1px,transparent_1px)] [background-size:20px_20px] opacity-60"></div>
-        
         <Router>
           <Routes>
             <Route path="/" element={<Layout />}>
               <Route index element={<HomePage />} />
               <Route path="find-a-hospital" element={<FindHospitalPage />} />
-              {/* We can add routes for Services, About, etc. later */}
             </Route>
           </Routes>
         </Router>
-
       </div>
     </div>
   );
 }
 
 export default App;
-
