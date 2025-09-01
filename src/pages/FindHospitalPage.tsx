@@ -66,7 +66,7 @@ function FindHospitalPage() {
     const timer = setTimeout(() => {
       setHospitals(allHospitals);
       setIsLoading(false);
-    }, 1500);
+    }, 1000);
     return () => clearTimeout(timer);
   }, []);
   

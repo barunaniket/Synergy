@@ -41,7 +41,7 @@ function App() {
           /* Layer 2: The subtle dot grid using a light, semi-transparent color from your theme */
           radial-gradient(
             circle,
-            rgba(156, 163, 175, 0.5) 1px, /* text-secondary at 10% opacity */
+            rgba(156, 163, 175, 0.35) 1px, /* text-secondary at 10% opacity */
             transparent 1px
           )
         `,

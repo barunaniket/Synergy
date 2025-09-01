@@ -59,9 +59,9 @@ function HeroSection() {
             >
               <div className="space-y-4">
                 <h1 className="text-4xl font-bold tracking-tighter text-text-primary sm:text-5xl md:text-6xl lg:text-7xl">
-                  Find the Right Hospital,
+                  Quick to decide,
                   <br />
-                  <span className="text-primary">Faster Than Ever.</span>
+                  <span className="text-primary">Best care by your side.</span>
                 </h1>
                 <p className="mx-auto max-w-[700px] text-lg text-text-secondary md:text-xl lg:mx-0">
                   Our platform connects patients with hospitals in real-time, reducing wait times and
