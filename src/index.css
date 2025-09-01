@@ -1,0 +1,9 @@
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+body {
+  /* We only need to set the base colors here now, as the pattern is in App.tsx */
+  @apply bg-background text-text-primary;
+}
+
