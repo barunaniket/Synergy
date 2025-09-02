@@ -3,6 +3,9 @@ import { Navbar } from './components/Navbar';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import FindHospitalPage from './pages/FindHospitalPage';
+import HospitalDetailPage from './pages/HospitalDetailPage';
+import SchedulePage from './pages/SchedulePage';
+import AboutUsPage from './pages/AboutUsPage'; // 1. Import the new page
 
 const Layout = () => {
   return (
@@ -38,10 +41,9 @@ function App() {
             hsla(175, 100%, 70%, 0.25),
             transparent 30vw
           ),
-          /* Layer 2: The subtle dot grid using a light, semi-transparent color from your theme */
           radial-gradient(
             circle,
-            rgba(156, 163, 175, 0.35) 1px, /* text-secondary at 10% opacity */
+            rgba(156, 163, 175, 0.4) 1px,
             transparent 1px
           )
         `,
@@ -54,6 +56,10 @@ function App() {
             <Route path="/" element={<Layout />}>
               <Route index element={<HomePage />} />
               <Route path="find-a-hospital" element={<FindHospitalPage />} />
+              <Route path="hospital/:hospitalId" element={<HospitalDetailPage />} />
+              <Route path="schedule/:hospitalId/:organ" element={<SchedulePage />} />
+              {/* 2. Add the new route for the About Us page */}
+              <Route path="about" element={<AboutUsPage />} /> 
             </Route>
           </Routes>
         </Router>

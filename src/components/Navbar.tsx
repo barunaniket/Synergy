@@ -6,7 +6,8 @@ const navLinks = [
   { name: 'Home', href: '/' },
   { name: 'Find a Hospital', href: '/find-a-hospital' },
   { name: 'Services', href: '/services' },
-  { name: 'About Us', href: '/about' },
+  // Ensure this href points to the correct route
+  { name: 'About Us', href: '/about' }, 
   { name: 'Contact', href: '/contact' },
 ];
 
@@ -26,15 +27,12 @@ export function Navbar() {
     initial: {
       backgroundColor: 'rgba(255, 255, 255, 0)',
       boxShadow: 'none',
-      borderBottom: '1px solid rgba(229, 231, 235, 0)', // Start with a transparent border
+      borderBottom: '1px solid rgba(229, 231, 235, 0)',
     },
     scrolled: {
-      // More opaque background for better readability
       backgroundColor: 'rgba(255, 255, 255, 0.9)', 
       boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
-      // Stronger blur for a more pronounced glass effect
       backdropFilter: 'blur(10px)', 
-      // Add a subtle border to create a clear edge
       borderBottom: '1px solid rgba(229, 231, 235, 0.6)', 
     },
   };
@@ -59,13 +57,11 @@ export function Navbar() {
         transition={{ duration: 0.3 }}
       >
         <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-          {/* Logo */}
           <a href="/" className="flex items-center gap-2 text-text-primary hover:text-primary transition-colors">
             <HeartPulse className="h-7 w-7 text-primary" />
             <span className="text-xl font-bold">Synergy</span>
           </a>
 
-          {/* Desktop Links */}
           <div className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <a
@@ -88,7 +84,6 @@ export function Navbar() {
             </a>
           </div>
 
-          {/* Mobile Menu Button */}
           <div className="md:hidden">
             <button onClick={() => setIsOpen(!isOpen)} className="text-text-primary">
               {isOpen ? <X size={24} /> : <Menu size={24} />}
@@ -97,7 +92,6 @@ export function Navbar() {
         </div>
       </motion.nav>
 
-      {/* Mobile Menu */}
       <motion.div
         className="fixed top-0 left-0 w-full h-screen bg-background pt-24 p-6 z-40 md:hidden"
         initial="closed"

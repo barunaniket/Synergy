@@ -91,4 +91,3 @@ function HowItWorksSection() {
 }
 
 export default HowItWorksSection;
-
