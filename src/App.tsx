@@ -5,11 +5,14 @@ import HomePage from './pages/HomePage';
 import FindHospitalPage from './pages/FindHospitalPage';
 import HospitalDetailPage from './pages/HospitalDetailPage';
 import SchedulePage from './pages/SchedulePage';
-import AboutUsPage from './pages/AboutUsPage'; // 1. Import the new page
+import AboutUsPage from './pages/AboutUsPage';
+import ContactUsPage from './pages/ContactPage';
+import ServicesPage from './pages/ServicesPage';
 
 const Layout = () => {
   return (
-    <div className="relative z-10">
+    // By removing className="relative", we fix the stacking issue.
+    <div>
       <Navbar />
       <main>
         <Outlet />
@@ -50,6 +53,7 @@ function App() {
         backgroundSize: `auto, 20px 20px`,
       }}
     >
+      {/* This 'relative' is needed for the background effect, but the one in Layout was causing the issue. */}
       <div className="relative">
         <Router>
           <Routes>
@@ -58,8 +62,9 @@ function App() {
               <Route path="find-a-hospital" element={<FindHospitalPage />} />
               <Route path="hospital/:hospitalId" element={<HospitalDetailPage />} />
               <Route path="schedule/:hospitalId/:organ" element={<SchedulePage />} />
-              {/* 2. Add the new route for the About Us page */}
               <Route path="about" element={<AboutUsPage />} /> 
+              <Route path="contact" element={<ContactUsPage />} />
+              <Route path="services" element={<ServicesPage />} />
             </Route>
           </Routes>
         </Router>
@@ -69,3 +74,4 @@ function App() {
 }
 
 export default App;
+

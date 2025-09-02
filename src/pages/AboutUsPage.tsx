@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, wrap, useInView, animate } from 'framer-motion';
-import { Users, Target, Heart, Zap, Eye, ChevronLeft, ChevronRight, Hospital, Clock, UsersRound } from 'lucide-react';
+import { motion, AnimatePresence, wrap, useInView, animate, useScroll, useTransform } from 'framer-motion';
+import { Users, Target, Heart, Zap, Eye, ChevronLeft, ChevronRight, Hospital, Clock, UsersRound, ArrowDown } from 'lucide-react';
 
-// Variants for staggered animations
+// Variants for staggered animations (retained for card pop-ins)
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -18,7 +18,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
-// Data for the page sections
+// Data for the page sections (unchanged)
 const values = [
     {
       icon: Eye,
@@ -91,7 +91,7 @@ const testimonials = [
     }
 ];
 
-// Animation variants for directional sliding
+// Animation variants for testimonial slideshow (unchanged)
 const slideVariants = {
   enter: (direction: number) => ({
     x: direction > 0 ? '100%' : '-100%',
@@ -107,7 +107,7 @@ const slideVariants = {
   }),
 };
 
-// Component for the animated counter
+// Component for the animated counter (unchanged)
 function AnimatedCounter({ to, icon: Icon, label, suffix = '' }: { to: number, icon: React.ElementType, label: string, suffix?: string }) {
     const ref = useRef<HTMLSpanElement>(null);
     const isInView = useInView(ref, { once: true, margin: "-50px" });
@@ -154,39 +154,90 @@ function AboutUsPage() {
     return () => clearInterval(interval);
   }, [page]);
 
+  // --- NEW: Refs and hooks for scroll animations ---
+  const heroRef = useRef<HTMLElement>(null);
+  const { scrollYProgress: heroScrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+  const heroTextY = useTransform(heroScrollYProgress, [0, 1], ["0%", "50%"]);
+  const heroOpacity = useTransform(heroScrollYProgress, [0, 0.5], [1, 0]);
+  const arrowOpacity = useTransform(heroScrollYProgress, [0, 0.2], [1, 0]);
+  
+  const storyRef = useRef<HTMLElement>(null);
+  const { scrollYProgress: storyScrollYProgress } = useScroll({
+    target: storyRef,
+    offset: ["start end", "center center"]
+  });
+  const storyTextX = useTransform(storyScrollYProgress, [0, 1], ['-50px', '0px']);
+  const storyTextOpacity = useTransform(storyScrollYProgress, [0, 1], [0, 1]);
+  const storyImageX = useTransform(storyScrollYProgress, [0, 1], ['50px', '0px']);
+  const storyImageOpacity = useTransform(storyScrollYProgress, [0, 1], [0, 1]);
+  const storyImageReveal = useTransform(storyScrollYProgress, [0, 1], ['0%', '100%']);
+
+  const impactRef = useRef<HTMLElement>(null);
+  const { scrollYProgress: impactScrollYProgress } = useScroll({
+    target: impactRef,
+    offset: ["start end", "end center"]
+  });
+  const impactOpacity = useTransform(impactScrollYProgress, [0, 0.6], [0.5, 1]);
+  const impactScale = useTransform(impactScrollYProgress, [0, 0.6], [0.9, 1]);
+  
+  const valuesRef = useRef<HTMLElement>(null);
+  const { scrollYProgress: valuesScrollYProgress } = useScroll({
+      target: valuesRef,
+      offset: ["start end", "end start"]
+  });
+  const valuesY = useTransform(valuesScrollYProgress, [0, 1], ['50px', '-50px']);
+
+  const teamRef = useRef<HTMLElement>(null);
+  const { scrollYProgress: teamScrollYProgress } = useScroll({
+      target: teamRef,
+      offset: ["start end", "end start"]
+  });
+  const teamY = useTransform(teamScrollYProgress, [0, 1], ['50px', '-50px']);
+
   return (
     <div className="pt-20 overflow-x-hidden">
-      {/* Hero Section */}
-      <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }} className="py-24 md:py-32 text-center">
-        <div className="container mx-auto px-4 md:px-6">
-          <motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="text-4xl md:text-6xl font-bold text-text-primary">
+      {/* Hero Section with Scroll Animation */}
+      <motion.section ref={heroRef} className="h-screen flex items-center justify-center text-center relative">
+        <motion.div style={{ y: heroTextY, opacity: heroOpacity }} className="container mx-auto px-4 md:px-6">
+          <h1 className="text-4xl md:text-6xl font-bold text-text-primary">
             Bridging the Gap in Urgent Care.
-          </motion.h1>
-          <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }} className="mt-4 max-w-3xl mx-auto text-lg text-text-secondary">
+          </h1>
+          <p className="mt-4 max-w-3xl mx-auto text-lg text-text-secondary">
             Synergy was born from a simple, powerful idea: that no one should have to wait for life-saving care because of logistical barriers. We are a team of technologists, healthcare professionals, and patient advocates dedicated to creating a more connected and efficient healthcare ecosystem.
-          </motion.p>
-        </div>
+          </p>
+        </motion.div>
+        <motion.div
+            className="absolute bottom-10 left-1/2 -translate-x-1/2"
+            style={{ opacity: arrowOpacity }}
+            animate={{ y: [0, 10, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+        >
+            <ArrowDown className="h-8 w-8 text-text-secondary" />
+        </motion.div>
       </motion.section>
       
-      {/* Our Story Section */}
-      <section className="py-20 md:py-28 bg-surface border-y border-border">
+      {/* Our Story Section with Scroll Animation */}
+      <section ref={storyRef} className="py-20 md:py-28 bg-surface border-y border-border">
           <div className="container mx-auto px-4 md:px-6 grid md:grid-cols-2 gap-12 items-center">
-              <motion.div initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, amount: 0.5 }} transition={{ duration: 0.7 }}>
+              <motion.div style={{ x: storyTextX, opacity: storyTextOpacity }}>
                   <Target className="h-12 w-12 text-primary mb-4" />
                   <h2 className="text-3xl font-bold text-text-primary mb-4">Our Mission</h2>
                   <p className="text-text-secondary leading-relaxed">
                       Our mission is to create a transparent, data-driven network that seamlessly connects patients with available hospital capacity for specialty care and transplants. We aim to eliminate uncertainty and reduce critical wait times, ultimately saving lives by making vital information accessible when it matters most.
                   </p>
               </motion.div>
-              <motion.div className="relative h-96 rounded-lg overflow-hidden border border-border shadow-2xl" initial={{ opacity: 0, x: 50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.8 }}>
+              <motion.div className="relative h-96 rounded-lg overflow-hidden border border-border shadow-2xl" style={{ x: storyImageX, opacity: storyImageOpacity }}>
                   <img src="https://plus.unsplash.com/premium_photo-1661281345831-72aac72beb52?q=80&w=1169&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Team collaborating" className="absolute w-full h-full object-cover" />
-                  <motion.div className="absolute inset-0 bg-surface" initial={{ x: '0%' }} whileInView={{ x: '100%' }} viewport={{ once: true, amount: 0.4 }} transition={{ duration: 0.8, ease: 'easeInOut' }} />
+                  <motion.div className="absolute inset-0 bg-surface" style={{ x: storyImageReveal }} />
               </motion.div>
           </div>
       </section>
 
-      {/* Our Impact In Numbers Section */}
-      <section className="py-20 md:py-28">
+      {/* Our Impact In Numbers Section with Scroll Animation */}
+      <motion.section ref={impactRef} style={{ opacity: impactOpacity, scale: impactScale }} className="py-20 md:py-28">
           <div className="container mx-auto px-4 md:px-6">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-12">
                   <AnimatedCounter to={1200} icon={UsersRound} label="Patients Helped" suffix="+" />
@@ -194,16 +245,16 @@ function AboutUsPage() {
                   <AnimatedCounter to={40} icon={Clock} label="Avg. Wait Time Reduction" suffix="%" />
               </div>
           </div>
-      </section>
+      </motion.section>
 
-      {/* Our Values Section */}
-      <section className="py-20 md:py-28 border-t border-border bg-surface">
+      {/* Our Values Section with Scroll Animation */}
+      <section ref={valuesRef} className="py-20 md:py-28 border-t border-border bg-surface overflow-hidden">
         <div className="container mx-auto px-4 md:px-6">
             <div className="text-center mb-12">
                 <h2 className="text-3xl font-bold text-text-primary">The Principles That Guide Us</h2>
                 <p className="mt-2 text-text-secondary">Our values are the foundation of our platform and our promise to you.</p>
             </div>
-            <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <motion.div style={{ y: valuesY }} variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {values.map((value) => (
                     <motion.div key={value.title} variants={itemVariants} className="bg-background p-8 rounded-lg border border-border text-center">
                         <value.icon className="h-10 w-10 text-primary mx-auto mb-4"/>
@@ -215,7 +266,7 @@ function AboutUsPage() {
         </div>
       </section>
 
-      {/* Premium Testimonial Slideshow */}
+      {/* Premium Testimonial Slideshow (Unchanged) */}
       <section className="py-20 md:py-28 border-y border-border">
         <div className="container mx-auto px-4 md:px-6">
           <div className="relative max-w-4xl mx-auto h-80 flex items-center justify-center">
@@ -257,14 +308,14 @@ function AboutUsPage() {
         </div>
       </section>
 
-      {/* Meet The Team Section */}
-      <section className="py-20 md:py-28 bg-surface">
+      {/* Meet The Team Section with Scroll Animation */}
+      <section ref={teamRef} className="py-20 md:py-28 bg-surface overflow-hidden">
         <div className="container mx-auto px-4 md:px-6">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold text-text-primary">Meet Our Team</h2>
             <p className="mt-2 text-text-secondary">The passionate individuals behind Synergy.</p>
           </div>
-          <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <motion.div style={{ y: teamY }} variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, amount: 0.2 }} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {teamMembers.map((member) => (
               <motion.div key={member.name} variants={itemVariants} whileHover={{ y: -8, scale: 1.03 }} transition={{ type: 'spring', stiffness: 300 }} className="text-center">
                 <div className="relative w-48 h-48 mx-auto rounded-full overflow-hidden border-2 border-primary shadow-lg">
@@ -278,7 +329,7 @@ function AboutUsPage() {
         </div>
       </section>
       
-      {/* CTA Section */}
+      {/* CTA Section (Unchanged) */}
       <section className="py-20 md:py-28 text-center border-t border-border">
           <div className="container mx-auto px-4 md:px-6">
             <Users className="h-12 w-12 text-primary mx-auto mb-4"/>
@@ -301,3 +352,4 @@ function AboutUsPage() {
 }
 
 export default AboutUsPage;
+
