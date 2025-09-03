@@ -1,6 +1,20 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion';
-import { Hospital, Siren, Pill, Home, Video, ArrowRight, Plus, ShieldCheck, Zap, Users } from 'lucide-react';
+import {
+  Hospital,
+  Siren,
+  Pill,
+  Home,
+  Video,
+  ArrowRight,
+  Plus,
+  ShieldCheck,
+  Zap,
+  Users,
+  Search,
+  Calendar,
+  HeartHandshake
+} from 'lucide-react';
 
 // --- DATA ---
 const services = [
@@ -59,6 +73,25 @@ const benefits = [
     }
 ];
 
+const processSteps = [
+    {
+        icon: Search,
+        title: "1. Define Your Needs",
+        description: "Use our intelligent search and filtering tools to specify the care you require, from transplant type to location and budget."
+    },
+    {
+        icon: Calendar,
+        title: "2. Review & Connect",
+        description: "Browse a curated list of hospitals with real-time availability. View detailed profiles and schedule consultations directly."
+    },
+    {
+        icon: HeartHandshake,
+        title: "3. Receive Care",
+        description: "With logistics streamlined, you can focus on what matters most: accessing the best possible care, faster and with full transparency."
+    }
+];
+
+
 const faqs = [
     {
         question: "How does Synergy find hospitals so quickly?",
@@ -103,9 +136,10 @@ const AnimatedWords = ({ text }: { text: string }) => {
     );
 };
 
+// --- ServiceCard with image border removed ---
 const ServiceCard = ({ service }: { service: typeof services[0] }) => {
     const ref = useRef<HTMLAnchorElement>(null);
-    
+
     const x = useMotionValue(0);
     const y = useMotionValue(0);
 
@@ -143,19 +177,19 @@ const ServiceCard = ({ service }: { service: typeof services[0] }) => {
             variants={itemVariants}
             className="block group rounded-2xl overflow-hidden border border-border bg-surface relative"
         >
-            <div className="relative h-64">
-                <motion.img 
-                    src={service.image} 
-                    alt={service.title} 
-                    className="absolute inset-0 w-full h-full object-cover" 
+            <div className="relative h-64 rounded-t-2xl overflow-hidden"> {/* Removed border-b from here */}
+                <motion.img
+                    src={service.image}
+                    alt={service.title}
+                    className="absolute inset-0 w-full h-full object-cover"
                     style={{
                         transformStyle: "preserve-3d",
                         scale: 1.1,
-                        transition: 'transform 0.4s ease',
                     }}
                     whileHover={{ scale: 1.05 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 10 }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
             </div>
             <div className="p-8" style={{ transform: "translateZ(50px)" }}>
                 <div className="flex items-center gap-4 mb-4">
@@ -208,7 +242,7 @@ function ServicesPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   return (
-    <div className="pt-20 bg-background overflow-x-hidden">
+    <div className="pt-20 overflow-x-hidden">
       {/* Hero Section */}
       <motion.section
         initial="hidden"
@@ -231,7 +265,7 @@ function ServicesPage() {
 
       {/* Services Grid */}
       <section className="container mx-auto px-4 md:px-6 py-24 md:py-32">
-        <motion.div 
+        <motion.div
             className="text-center mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -243,7 +277,7 @@ function ServicesPage() {
                 From urgent needs to ongoing support, our services are designed around you.
             </p>
         </motion.div>
-        <motion.div 
+        <motion.div
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
             style={{ perspective: "1000px" }}
             variants={containerVariants}
@@ -255,10 +289,45 @@ function ServicesPage() {
         </motion.div>
       </section>
 
-      {/* Benefits Section */}
-      <section className="py-24 md:py-32 bg-surface border-y border-border">
+      {/* Process Section */}
+       <section className="py-24 md:py-32 bg-surface border-y border-border">
           <div className="container mx-auto px-4 md:px-6">
-            <motion.div 
+            <motion.div
+                className="text-center mb-16"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.5 }}
+                transition={{ duration: 0.6 }}
+            >
+                <h2 className="text-3xl font-bold text-text-primary sm:text-4xl">Your Journey, Simplified</h2>
+                <p className="mt-4 max-w-2xl mx-auto text-text-secondary">
+                    We've refined the process of finding healthcare into three simple, transparent steps.
+                </p>
+            </motion.div>
+            <motion.div
+                className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto"
+                variants={containerVariants}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, amount: 0.3 }}
+            >
+                {processSteps.map((step) => (
+                    <motion.div key={step.title} variants={itemVariants} className="flex flex-col items-center text-center p-8">
+                        <div className="flex items-center justify-center h-16 w-16 rounded-full bg-primary/10 text-primary mx-auto mb-6">
+                            <step.icon size={32} />
+                        </div>
+                        <h3 className="text-xl font-bold text-text-primary mb-2">{step.title}</h3>
+                        <p className="text-text-secondary">{step.description}</p>
+                    </motion.div>
+                ))}
+            </motion.div>
+          </div>
+      </section>
+
+      {/* Benefits Section */}
+      <section className="py-24 md:py-32">
+          <div className="container mx-auto px-4 md:px-6">
+            <motion.div
                 className="text-center mb-16"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
@@ -270,7 +339,7 @@ function ServicesPage() {
                     We're committed to revolutionizing your healthcare experience.
                 </p>
             </motion.div>
-            <motion.div 
+            <motion.div
                 className="grid grid-cols-1 md:grid-cols-3 gap-8"
                 variants={containerVariants}
                 initial="hidden"
@@ -292,7 +361,7 @@ function ServicesPage() {
 
       {/* FAQ Section */}
       <section className="container mx-auto px-4 md:px-6 py-24 md:py-32">
-        <motion.div 
+        <motion.div
             className="text-center mb-16"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -301,7 +370,7 @@ function ServicesPage() {
         >
             <h2 className="text-3xl font-bold text-text-primary sm:text-4xl">Frequently Asked Questions</h2>
         </motion.div>
-        <motion.div 
+        <motion.div
             className="max-w-3xl mx-auto"
             variants={containerVariants}
             initial="hidden"
@@ -309,7 +378,7 @@ function ServicesPage() {
             viewport={{ once: true, amount: 0.2 }}
         >
             {faqs.map((faq, index) => (
-                <AccordionItem 
+                <AccordionItem
                     key={index}
                     faq={faq}
                     isOpen={openFaq === index}
@@ -318,7 +387,7 @@ function ServicesPage() {
             ))}
         </motion.div>
       </section>
-      
+
       {/* CTA Section */}
        <section className="py-24 md:py-32 bg-surface border-t border-border">
             <motion.div
@@ -346,4 +415,3 @@ function ServicesPage() {
 }
 
 export default ServicesPage;
-
