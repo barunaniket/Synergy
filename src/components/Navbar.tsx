@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { HeartPulse, Menu, X } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 
+// Finalized list of navigation links
 const navLinks = [
   { name: 'Home', href: '/' },
+  { name: 'Emergency', href: '/emergency', special: true }, // Special flag for unique styling
   { name: 'Find a Hospital', href: '/find-a-hospital' },
   { name: 'Services', href: '/services' },
-  // Ensure this href points to the correct route
   { name: 'About Us', href: '/about' }, 
   { name: 'Contact', href: '/contact' },
 ];
@@ -14,6 +16,8 @@ const navLinks = [
 export function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
+  const isEmergencyPage = location.pathname === '/emergency';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -22,15 +26,16 @@ export function Navbar() {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
+  
+  // Variants now dynamically adjust background color based on the page
   const navVariants = {
     initial: {
-      backgroundColor: 'rgba(255, 255, 255, 0)',
+      backgroundColor: isEmergencyPage ? 'rgba(254, 242, 242, 0.8)' :'rgba(255, 255, 255, 0)',
       boxShadow: 'none',
       borderBottom: '1px solid rgba(229, 231, 235, 0)',
     },
     scrolled: {
-      backgroundColor: 'rgba(255, 255, 255, 0.9)', 
+      backgroundColor: isEmergencyPage ? 'rgba(254, 242, 242, 0.8)' : 'rgba(255, 255, 255, 0.9)', 
       boxShadow: '0 4px 30px rgba(0, 0, 0, 0.1)',
       backdropFilter: 'blur(10px)', 
       borderBottom: '1px solid rgba(229, 231, 235, 0.6)', 
@@ -52,7 +57,7 @@ export function Navbar() {
       <motion.nav
         className="fixed top-0 left-0 right-0 z-50 w-full"
         initial="initial"
-        animate={scrolled ? "scrolled" : "initial"}
+        animate={scrolled || isEmergencyPage ? "scrolled" : "initial"} // Always apply scrolled effect on emergency page
         variants={navVariants}
         transition={{ duration: 0.3 }}
       >
@@ -67,10 +72,20 @@ export function Navbar() {
               <a
                 key={link.name}
                 href={link.href}
-                className="text-text-secondary font-medium hover:text-primary transition-colors relative group"
+                // Apply conditional classes for text color on hover
+                className={`font-medium transition-colors relative group ${
+                    link.special 
+                    ? 'text-text-secondary hover:text-red-700 font-semibold' 
+                    : 'text-text-secondary hover:text-primary'
+                }`}
               >
                 {link.name}
-                <span className="absolute bottom-0 left-0 w-full h-0.5 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300"></span>
+                <span
+                  // Apply conditional classes for the underline color
+                  className={`absolute bottom-[-2px] left-0 w-full h-0.5 scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-300 ${
+                    link.special ? 'bg-red-600' : 'bg-primary'
+                  }`}
+                ></span>
               </a>
             ))}
           </div>
@@ -103,7 +118,11 @@ export function Navbar() {
              <motion.a
                 key={link.name}
                 href={link.href}
-                className="text-2xl text-text-secondary font-medium hover:text-primary transition-colors"
+                className={`text-2xl font-medium transition-colors ${
+                    link.special
+                    ? 'text-text-secondary hover:text-red-700'
+                    : 'text-text-secondary hover:text-primary'
+                }`}
                 variants={mobileLinkVariants}
              >
                {link.name}
@@ -121,3 +140,4 @@ export function Navbar() {
     </>
   );
 }
+

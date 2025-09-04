@@ -12,6 +12,7 @@ import EmergencyPage from './pages/EmergencyPage';
 import PharmacyPage from './pages/PharmacyPage';
 import HomeCarePage from './pages/HomeCarePage';
 import TelehealthPage from './pages/TelehealthPage';
+import Ambulance from './pages/Ambulance';
 
 const Layout = () => {
   return (
@@ -66,6 +67,7 @@ function App() {
               <Route path="pharmacy" element={<PharmacyPage />} />
               <Route path="home-visit" element={<HomeCarePage />} />
               <Route path="telehealth" element={<TelehealthPage />} />
+              <Route path="ambulance" element={<Ambulance />} />
             </Route>
           </Routes>
         </Router>

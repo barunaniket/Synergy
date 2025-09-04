@@ -33,6 +33,27 @@ import { useNavigate } from 'react-router-dom';
 
 // --- ENHANCED DATA STRUCTURE FOR EMERGENCIES ---
 const emergencyTypes = [
+    {
+    id: 'transplant',
+    title: 'Organ Transplant Alert',
+    description: 'Urgent coordination for organ transplant procedures.',
+    Icon: Heart,
+    formFields: [
+      { id: 'organ', label: 'Required Organ', type: 'select', options: ['Kidney', 'Liver', 'Heart', 'Lung', 'Pancreas', 'Cornea'] },
+      { id: 'bloodType', label: "Patient's Blood Type", type: 'select', options: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] },
+    ],
+    results: {
+      title: 'Urgent Transplant Coordination',
+      confirmation: 'Your request has been broadcast to transplant centers in our network. A coordinator from the first available match will contact you directly.',
+      isTransplant: true,
+      steps: [
+        { text: 'We are locating suitable hospitals.', details: 'Our system is matching your request with real-time availability in our network.' },
+        { text: "Prepare patient's medical records.", details: 'Have all relevant medical history, previous test results, and identification documents ready.' },
+        { text: 'A specialist will contact you.', details: 'Once a match is found, a transplant coordinator from the hospital will reach out to you directly with further instructions.' },
+      ],
+      aiPrompt: 'The user requires an urgent organ transplant. Provide a calming message, explain that the system is searching for a hospital, and advise on what documents and information they should prepare while they wait for a call from a coordinator.',
+    },
+  },
   {
     id: 'cardiac',
     title: 'Cardiac Arrest / Heart Attack',
@@ -94,27 +115,6 @@ const emergencyTypes = [
         { text: 'Do not give them anything to eat or drink.', details: 'Their ability to swallow may be impaired.' },
       ],
       aiPrompt: 'A stroke is suspected. Reinforce the F.A.S.T. acronym and provide guidance on keeping the person safe and comfortable while waiting for the ambulance. Emphasize the importance of noting the time of symptom onset.',
-    },
-  },
-  {
-    id: 'transplant',
-    title: 'Organ Transplant Alert',
-    description: 'Urgent coordination for organ transplant procedures.',
-    Icon: Heart,
-    formFields: [
-      { id: 'organ', label: 'Required Organ', type: 'select', options: ['Kidney', 'Liver', 'Heart', 'Lung', 'Pancreas', 'Cornea'] },
-      { id: 'bloodType', label: "Patient's Blood Type", type: 'select', options: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] },
-    ],
-    results: {
-      title: 'Urgent Transplant Coordination',
-      confirmation: 'Your request has been broadcast to transplant centers in our network. A coordinator from the first available match will contact you directly.',
-      isTransplant: true,
-      steps: [
-        { text: 'We are locating suitable hospitals.', details: 'Our system is matching your request with real-time availability in our network.' },
-        { text: "Prepare patient's medical records.", details: 'Have all relevant medical history, previous test results, and identification documents ready.' },
-        { text: 'A specialist will contact you.', details: 'Once a match is found, a transplant coordinator from the hospital will reach out to you directly with further instructions.' },
-      ],
-      aiPrompt: 'The user requires an urgent organ transplant. Provide a calming message, explain that the system is searching for a hospital, and advise on what documents and information they should prepare while they wait for a call from a coordinator.',
     },
   },
   {
