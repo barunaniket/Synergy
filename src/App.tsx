@@ -8,6 +8,7 @@ import SchedulePage from './pages/SchedulePage';
 import AboutUsPage from './pages/AboutUsPage';
 import ContactUsPage from './pages/ContactPage';
 import ServicesPage from './pages/ServicesPage';
+import EmergencyPage from './pages/EmergencyPage.tsx'; // Added import for EmergencyPage
 
 const Layout = () => {
   return (
@@ -65,6 +66,7 @@ function App() {
               <Route path="about" element={<AboutUsPage />} /> 
               <Route path="contact" element={<ContactUsPage />} />
               <Route path="services" element={<ServicesPage />} />
+              <Route path="emergency" element={<EmergencyPage />} /> {/* Added route for EmergencyPage */}
             </Route>
           </Routes>
         </Router>
@@ -74,4 +76,3 @@ function App() {
 }
 
 export default App;
-
