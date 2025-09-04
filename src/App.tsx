@@ -8,11 +8,13 @@ import SchedulePage from './pages/SchedulePage';
 import AboutUsPage from './pages/AboutUsPage';
 import ContactUsPage from './pages/ContactPage';
 import ServicesPage from './pages/ServicesPage';
-import EmergencyPage from './pages/EmergencyPage.tsx'; // Added import for EmergencyPage
+import EmergencyPage from './pages/EmergencyPage';
+import PharmacyPage from './pages/PharmacyPage';
+import HomeCarePage from './pages/HomeCarePage';
+import TelehealthPage from './pages/TelehealthPage';
 
 const Layout = () => {
   return (
-    // By removing className="relative", we fix the stacking issue.
     <div>
       <Navbar />
       <main>
@@ -41,20 +43,14 @@ function App() {
       style={{
         backgroundImage: `
           radial-gradient(
-            circle at var(--x) var(--y),
-            hsla(175, 100%, 70%, 0.25),
-            transparent 30vw
-          ),
-          radial-gradient(
             circle,
             rgba(156, 163, 175, 0.4) 1px,
             transparent 1px
           )
         `,
-        backgroundSize: `auto, 20px 20px`,
+        backgroundSize: `20px 20px`,
       }}
     >
-      {/* This 'relative' is needed for the background effect, but the one in Layout was causing the issue. */}
       <div className="relative">
         <Router>
           <Routes>
@@ -66,7 +62,10 @@ function App() {
               <Route path="about" element={<AboutUsPage />} /> 
               <Route path="contact" element={<ContactUsPage />} />
               <Route path="services" element={<ServicesPage />} />
-              <Route path="emergency" element={<EmergencyPage />} /> {/* Added route for EmergencyPage */}
+              <Route path="emergency" element={<EmergencyPage />} />
+              <Route path="pharmacy" element={<PharmacyPage />} />
+              <Route path="home-visit" element={<HomeCarePage />} />
+              <Route path="telehealth" element={<TelehealthPage />} />
             </Route>
           </Routes>
         </Router>
@@ -76,3 +75,4 @@ function App() {
 }
 
 export default App;
+
