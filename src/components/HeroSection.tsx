@@ -76,7 +76,7 @@ function HeroSection() {
                   Start Your Search
                 </a>
                 <a
-                  href="#"
+                  href="/about"
                   className="inline-flex h-12 items-center justify-center rounded-md border border-border bg-transparent px-8 text-sm font-medium shadow-sm transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
                 >
                   Learn More

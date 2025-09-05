@@ -13,6 +13,7 @@ import PharmacyPage from './pages/PharmacyPage';
 import HomeCarePage from './pages/HomeCarePage';
 import TelehealthPage from './pages/TelehealthPage';
 import Ambulance from './pages/Ambulance';
+import { Chatbot } from './components/Chatbot'; // 1. Import the Chatbot
 
 const Layout = () => {
   return (
@@ -71,10 +72,10 @@ function App() {
             </Route>
           </Routes>
         </Router>
+        <Chatbot /> {/* 2. Add the Chatbot component here */}
       </div>
     </div>
   );
 }
 
 export default App;
-
