@@ -723,7 +723,7 @@ const EmergencyForm = ({ emergency, formData, isLoading, onChange, onSubmit, onB
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          {isLoading ? <Zap className="animate-spin h-5 w-5" /> : 'Get Guidance'}
+          {isLoading ? <Zap className="animate-spin h-5 w-5" /> : 'Submit'}
         </motion.button>
       </div>
     </motion.form>
