@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, wrap, useInView, animate, useScroll, useTransform } from 'framer-motion';
 import { Users, Target, Heart, Zap, Eye, ChevronLeft, ChevronRight, Hospital, Clock, UsersRound, ArrowDown } from 'lucide-react';
 
-// Variants for staggered animations (retained for card pop-ins)
+// Variants for staggered animations
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -18,7 +18,7 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
-// Data for the page sections (unchanged)
+// Data for the page sections
 const values = [
     {
       icon: Eye,
@@ -91,7 +91,7 @@ const testimonials = [
     }
 ];
 
-// Animation variants for testimonial slideshow (unchanged)
+// Animation variants for testimonial slideshow
 const slideVariants = {
   enter: (direction: number) => ({
     x: direction > 0 ? '100%' : '-100%',
@@ -107,7 +107,7 @@ const slideVariants = {
   }),
 };
 
-// Component for the animated counter (unchanged)
+// Component for the animated counter
 function AnimatedCounter({ to, icon: Icon, label, suffix = '' }: { to: number, icon: React.ElementType, label: string, suffix?: string }) {
     const ref = useRef<HTMLSpanElement>(null);
     const isInView = useInView(ref, { once: true, margin: "-50px" });
@@ -138,6 +138,98 @@ function AnimatedCounter({ to, icon: Icon, label, suffix = '' }: { to: number, i
     );
 }
 
+// Refined Gemini Effect Component
+function GeminiEffect() {
+  const ref = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end center"],
+  });
+
+  // Smoother path length animations with slight delays
+  const pathLength1 = useTransform(scrollYProgress, [0, 0.7], [0, 1]);
+  const pathLength2 = useTransform(scrollYProgress, [0, 0.75], [0, 1]);
+  const pathLength3 = useTransform(scrollYProgress, [0, 0.8], [0, 1]);
+  const pathLength4 = useTransform(scrollYProgress, [0, 0.85], [0, 1]);
+
+  return (
+    <section ref={ref} className="relative h-screen w-full flex items-center justify-center overflow-hidden bg-gradient-to-b from-surface to-background">
+      <div className="container mx-auto px-4 md:px-6 text-center z-10">
+        <motion.h1
+          className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-primary to-text-primary bg-clip-text text-transparent"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, ease: "easeOut" }}
+        >
+          Welcome to Synergy
+        </motion.h1>
+        <motion.p
+          className="mt-6 max-w-2xl mx-auto text-lg md:text-xl text-text-secondary"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
+        >
+          A platform built to connect patients with life-saving care through transparency and innovation.
+        </motion.p>
+        <motion.div
+          className="mt-10"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1, ease: "easeOut", delay: 0.6 }}
+        >
+          <a
+            href="#hero"
+            className="inline-flex h-12 items-center justify-center rounded-full bg-primary px-8 text-sm font-medium text-white shadow-lg transition-colors hover:bg-primary/80"
+          >
+            Discover Our Mission
+          </a>
+        </motion.div>
+      </div>
+      <svg
+        width="100%"
+        height="100%"
+        viewBox="0 0 1440 600"
+        className="absolute top-0 left-0 w-full h-full opacity-50"
+        preserveAspectRatio="xMidYMid slice"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <motion.path
+          d="M0 400 C200 350, 300 450, 400 400 C500 350, 600 450, 700 400 C800 350, 900 450, 1000 400 C1100 350, 1200 450, 1300 400 C1400 350, 1440 400, 1440 400"
+          stroke="#3B82F6"
+          strokeWidth="3"
+          fill="none"
+          style={{ pathLength: pathLength1 }}
+          strokeLinecap="round"
+        />
+        <motion.path
+          d="M0 450 C200 400, 300 500, 400 450 C500 400, 600 500, 700 450 C800 400, 900 500, 1000 450 C1100 400, 1200 500, 1300 450 C1400 400, 1440 450, 1440 450"
+          stroke="#60A5FA"
+          strokeWidth="3"
+          fill="none"
+          style={{ pathLength: pathLength2 }}
+          strokeLinecap="round"
+        />
+        <motion.path
+          d="M0 500 C200 450, 300 550, 400 500 C500 450, 600 550, 700 500 C800 450, 900 550, 1000 500 C1100 450, 1200 550, 1300 500 C1400 450, 1440 500, 1440 500"
+          stroke="#93C5FD"
+          strokeWidth="3"
+          fill="none"
+          style={{ pathLength: pathLength3 }}
+          strokeLinecap="round"
+        />
+        <motion.path
+          d="M0 550 C200 500, 300 600, 400 550 C500 500, 600 600, 700 550 C800 500, 900 600, 1000 550 C1100 500, 1200 600, 1300 550 C1400 500, 1440 550, 1440 550"
+          stroke="#BFDBFE"
+          strokeWidth="3"
+          fill="none"
+          style={{ pathLength: pathLength4 }}
+          strokeLinecap="round"
+        />
+      </svg>
+    </section>
+  );
+}
+
 // The main About Us page component
 function AboutUsPage() {
   const [[page, direction], setPage] = useState([0, 0]);
@@ -154,7 +246,7 @@ function AboutUsPage() {
     return () => clearInterval(interval);
   }, [page]);
 
-  // --- NEW: Refs and hooks for scroll animations ---
+  // Refs and hooks for scroll animations
   const heroRef = useRef<HTMLElement>(null);
   const { scrollYProgress: heroScrollYProgress } = useScroll({
     target: heroRef,
@@ -199,8 +291,11 @@ function AboutUsPage() {
 
   return (
     <div className="pt-20 overflow-x-hidden">
+      {/* Google Gemini Effect Section */}
+      <GeminiEffect />
+
       {/* Hero Section with Scroll Animation */}
-      <motion.section ref={heroRef} className="h-screen flex items-center justify-center text-center relative">
+      <motion.section id="hero" ref={heroRef} className="h-screen flex items-center justify-center text-center relative">
         <motion.div style={{ y: heroTextY, opacity: heroOpacity }} className="container mx-auto px-4 md:px-6">
           <h1 className="text-4xl md:text-6xl font-bold text-text-primary">
             Bridging the Gap in Urgent Care.
@@ -266,7 +361,7 @@ function AboutUsPage() {
         </div>
       </section>
 
-      {/* Premium Testimonial Slideshow (Unchanged) */}
+      {/* Premium Testimonial Slideshow */}
       <section className="py-20 md:py-28 border-y border-border">
         <div className="container mx-auto px-4 md:px-6">
           <div className="relative max-w-4xl mx-auto h-80 flex items-center justify-center">
@@ -329,7 +424,7 @@ function AboutUsPage() {
         </div>
       </section>
       
-      {/* CTA Section (Unchanged) */}
+      {/* CTA Section */}
       <section className="py-20 md:py-28 text-center border-t border-border">
           <div className="container mx-auto px-4 md:px-6">
             <Users className="h-12 w-12 text-primary mx-auto mb-4"/>
@@ -352,4 +447,3 @@ function AboutUsPage() {
 }
 
 export default AboutUsPage;
-
