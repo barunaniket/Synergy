@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, useScroll, useTransform, useInView, AnimatePresence } from 'framer-motion';
 import { Pill, UploadCloud, FileCheck2, Truck, ShieldCheck, MessageSquare, Repeat, Package, Search, ArrowRight, ChevronDown, Star, X, Check, Loader2 } from 'lucide-react';
+import { getPrescriptionDetailsFromImage } from '../services/gemini'; // Import our new AI service
 
 // --- HELPER COMPONENTS ---
 
@@ -26,7 +27,7 @@ const AnimatedWords = ({ text, el: Wrapper = 'span', className, stagger = 0.08 }
 };
 
 // --- DATA ---
-
+// ... (All data arrays like howItWorksSteps, features, etc. remain unchanged)
 const howItWorksSteps = [
     { icon: UploadCloud, title: "1. Upload Prescription", description: "Securely upload a photo of your prescription. Our system will instantly digitize it." },
     { icon: FileCheck2, title: "2. Pharmacist Verification", description: "One of our certified pharmacists will review and verify your prescription for accuracy and safety." },
@@ -39,16 +40,16 @@ const features = [
     { icon: Package, title: "Discreet Packaging", description: "Your privacy is paramount. All orders are shipped in plain, secure packaging." },
 ];
 const productCategories = [
-    { name: "Vitamins & Supplements", image: "https://images.unsplash.com/photo-1607619056574-7d8d3ee536b2?q=80&w=2128&auto=format&fit=crop" },
-    { name: "Personal Care", image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=1887&auto=format&fit=crop" },
-    { name: "Baby & Mom Care", image: "https://images.unsplash.com/photo-1525824226392-42b3c2a4f4ed?q=80&w=1887&auto=format&fit=crop" },
-    { name: "Medical Devices", image: "https://images.unsplash.com/photo-1631590312138-0265a753b8f5?q=80&w=1887&auto=format&fit=crop" },
+    { name: "Vitamins & Supplements", image: "https://images.unsplash.com/photo-1683394572742-1e471f60fc2a?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+    { name: "Personal Care", image: "https://plus.unsplash.com/premium_photo-1661597206779-b6643eac8213?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+    { name: "Baby & Mom Care", image: "https://images.unsplash.com/photo-1724667593663-54c6bb73e7ce?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+    { name: "Medical Devices", image: "https://images.unsplash.com/photo-1654512041772-446bd165a3b3?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
 ];
 const featuredProducts = [
-    { name: "Omega-3 Fish Oil", price: "24.99", rating: 4.8, image: "https://images.unsplash.com/photo-1627484010813-ac382a58d047?q=80&w=1887&auto=format&fit=crop" },
-    { name: "Vitamin D3 Gummies", price: "18.50", rating: 4.9, image: "https://images.unsplash.com/photo-1631590312138-0265a753b8f5?q=80&w=1887&auto=format&fit=crop" },
-    { name: "Digital Thermometer", price: "15.00", rating: 4.7, image: "https://images.unsplash.com/photo-1607619056574-7d8d3ee536b2?q=80&w=2128&auto=format&fit=crop" },
-    { name: "Hypoallergenic Soap", price: "8.99", rating: 4.9, image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?q=80&w=1887&auto=format&fit=crop" },
+    { name: "Omega-3 Fish Oil", price: "24.99", rating: 4.8, image: "https://images.pexels.com/photos/208518/pexels-photo-208518.jpeg" },
+    { name: "Vitamin D3 Gummies", price: "18.50", rating: 4.9, image: "https://images.pexels.com/photos/14433550/pexels-photo-14433550.jpeg" },
+    { name: "Digital Thermometer", price: "15.00", rating: 4.7, image: "https://images.pexels.com/photos/3873176/pexels-photo-3873176.jpeg" },
+    { name: "Hypoallergenic Soap", price: "8.99", rating: 4.9, image: "https://www.cetaphil.com/on/demandware.static/-/Library-Sites-RefArchSharedLibrary/default/dw2e3cbf8c/052384-GSC-16oz_Front.PNG" },
 ];
 const faqs = [
   { question: "How do I upload a prescription?", answer: "Simply click the 'Upload Prescription' button, and you'll be prompted to take a photo or upload an image file of your prescription. Our system is secure and HIPAA compliant." },
@@ -56,6 +57,7 @@ const faqs = [
   { question: "Is my personal and medical information secure?", answer: "Absolutely. We use end-to-end encryption for all data transmissions and adhere to the strictest privacy standards to protect your sensitive information." },
   { question: "Can I speak to a pharmacist?", answer: "Yes, you can schedule a free and confidential video or phone consultation with one of our licensed pharmacists through your user dashboard." },
 ];
+
 
 // --- MAIN PAGE COMPONENT ---
 const PharmacyPage = () => {
@@ -75,7 +77,7 @@ const PharmacyPage = () => {
                 {isUploadModalOpen && <UploadModal closeModal={() => setIsUploadModalOpen(false)} />}
             </AnimatePresence>
             
-            {/* Hero Section */}
+            {/* Sections remain unchanged... */}
             <motion.section ref={heroRef} className="h-screen flex items-center justify-center text-center relative pt-20">
                 <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-primary/10 to-transparent"></div>
                 <motion.div style={{ y: heroTextY, opacity: heroOpacity }} className="container mx-auto px-4 md:px-6 z-10">
@@ -101,7 +103,6 @@ const PharmacyPage = () => {
                 </motion.div>
             </motion.section>
 
-            {/* How It Works Section */}
             <section ref={howItWorksRef} className="py-20 md:py-32 bg-surface border-y border-border">
                 <div className="container mx-auto px-4 md:px-6">
                     <motion.div className="text-center mb-16" initial={{ opacity: 0, y: 50 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ duration: 0.7, ease: 'easeOut' }}>
@@ -120,7 +121,6 @@ const PharmacyPage = () => {
                 </div>
             </section>
             
-            {/* Features Section */}
             <section className="py-20 md:py-32">
                  <div className="container mx-auto px-4 md:px-6">
                     <div className="text-center mb-16">
@@ -139,7 +139,6 @@ const PharmacyPage = () => {
                  </div>
             </section>
 
-             {/* Categories Section */}
             <section className="py-20 md:py-32 bg-surface border-y border-border">
                  <div className="container mx-auto px-4 md:px-6">
                     <div className="text-center mb-16">
@@ -160,7 +159,6 @@ const PharmacyPage = () => {
                 </div>
             </section>
             
-            {/* Featured Products Section */}
             <section className="py-20 md:py-32">
                 <div className="container mx-auto px-4 md:px-6">
                     <div className="text-center mb-16">
@@ -190,7 +188,6 @@ const PharmacyPage = () => {
                 </div>
             </section>
             
-            {/* FAQ Section */}
             <section className="py-20 md:py-32 bg-surface border-y border-border">
                 <div className="container mx-auto px-4 md:px-6 max-w-3xl">
                     <div className="text-center mb-16">
@@ -218,7 +215,6 @@ const PharmacyPage = () => {
                 </div>
             </section>
 
-             {/* Final CTA */}
             <section className="py-20 md:py-32 text-center">
                 <div className="container mx-auto px-4 md:px-6">
                     <Pill className="h-12 w-12 text-primary mx-auto mb-4"/>
@@ -239,9 +235,14 @@ const PharmacyPage = () => {
 }
 
 // --- PRESCRIPTION UPLOAD MODAL & STEPS ---
+type PrescriptionData = {
+    patientName: string;
+    medications: { name: string; dosage: string; instructions: string }[];
+};
+
 const UploadModal = ({ closeModal }: { closeModal: () => void }) => {
     const [step, setStep] = useState(1);
-    const [prescriptionFile, setPrescriptionFile] = useState<File | null>(null);
+    const [prescriptionData, setPrescriptionData] = useState<PrescriptionData | null>(null);
 
     const nextStep = () => setStep(s => s + 1);
     const prevStep = () => setStep(s => s - 1);
@@ -252,8 +253,8 @@ const UploadModal = ({ closeModal }: { closeModal: () => void }) => {
                 <button onClick={closeModal} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"><X /></button>
                 <div className="p-8">
                     <AnimatePresence mode="wait">
-                        {step === 1 && <UploadStep1 key={1} setFile={setPrescriptionFile} nextStep={nextStep} />}
-                        {step === 2 && <UploadStep2 key={2} prevStep={prevStep} nextStep={nextStep} />}
+                        {step === 1 && <UploadStep1 key={1} setPrescriptionData={setPrescriptionData} nextStep={nextStep} />}
+                        {step === 2 && <UploadStep2 key={2} prevStep={prevStep} nextStep={nextStep} prescriptionData={prescriptionData} />}
                         {step === 3 && <UploadSuccess key={3} closeModal={closeModal} />}
                     </AnimatePresence>
                 </div>
@@ -262,14 +263,26 @@ const UploadModal = ({ closeModal }: { closeModal: () => void }) => {
     );
 };
 
-const UploadStep1 = ({ setFile, nextStep }: { setFile: (f: File) => void, nextStep: () => void }) => {
-    const [file, setLocalFile] = useState<File | null>(null);
+const UploadStep1 = ({ setPrescriptionData, nextStep }: { setPrescriptionData: (data: PrescriptionData) => void, nextStep: () => void }) => {
+    const [file, setFile] = useState<File | null>(null);
+    const [isProcessing, setIsProcessing] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
 
-    const handleFileChange = (files: FileList | null) => {
+    const handleFileChange = async (files: FileList | null) => {
         if (files && files[0]) {
-            setLocalFile(files[0]);
-            setFile(files[0]);
+            const uploadedFile = files[0];
+            setFile(uploadedFile);
+            setIsProcessing(true);
+            try {
+                const data = await getPrescriptionDetailsFromImage(uploadedFile);
+                setPrescriptionData(data);
+                nextStep();
+            } catch (error) {
+                console.error("Failed to process prescription:", error);
+                // You could add error handling UI here
+            } finally {
+                setIsProcessing(false);
+            }
         }
     };
     
@@ -284,22 +297,32 @@ const UploadStep1 = ({ setFile, nextStep }: { setFile: (f: File) => void, nextSt
     return (
         <motion.div initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }} transition={{ ease: 'easeInOut' }} className="text-center">
             <h2 className="text-2xl font-bold mb-2">Upload Your Prescription</h2>
-            <p className="text-text-secondary mb-6">Drag and drop your file or click to select.</p>
+            <p className="text-text-secondary mb-6">Our AI will read it to speed up your order.</p>
             <label onDragEnter={onDragEnter} onDragOver={onDragEnter} onDragLeave={onDragLeave} onDrop={onDrop}
                 className={`relative cursor-pointer border-2 border-dashed rounded-lg flex flex-col items-center justify-center p-10 transition-colors ${isDragging ? 'border-primary bg-primary/10' : 'border-border'}`}>
-                <UploadCloud className={`h-12 w-12 mb-4 transition-colors ${file ? 'text-primary' : 'text-gray-400'}`} />
-                <span className="text-sm text-text-secondary">
-                    {file ? <span className="font-semibold text-primary">{file.name}</span> : 'PNG, JPG, or PDF. Max 10MB.'}
-                </span>
-                <input type="file" className="sr-only" onChange={(e) => handleFileChange(e.target.files)} accept="image/png, image/jpeg, application/pdf" />
+                {isProcessing ? (
+                    <>
+                        <Loader2 className="h-12 w-12 mb-4 text-primary animate-spin" />
+                        <span className="text-sm text-text-secondary font-semibold">Analyzing...</span>
+                    </>
+                ) : (
+                    <>
+                        <UploadCloud className={`h-12 w-12 mb-4 transition-colors ${file ? 'text-primary' : 'text-gray-400'}`} />
+                        <span className="text-sm text-text-secondary">
+                            {file ? <span className="font-semibold text-primary">{file.name}</span> : 'PNG, JPG, or PDF. Max 10MB.'}
+                        </span>
+                    </>
+                )}
+                <input type="file" className="sr-only" onChange={(e) => handleFileChange(e.target.files)} accept="image/png, image/jpeg, application/pdf" disabled={isProcessing} />
             </label>
-            <button onClick={nextStep} disabled={!file} className="w-full mt-6 bg-primary text-white font-semibold py-3 rounded-lg disabled:bg-gray-300 transition-colors">Next</button>
+            <p className="text-xs text-gray-400 mt-4">Your data is encrypted and processed securely.</p>
         </motion.div>
     );
 };
 
-const UploadStep2 = ({ prevStep, nextStep }: { prevStep: () => void, nextStep: () => void }) => {
+const UploadStep2 = ({ prevStep, nextStep, prescriptionData }: { prevStep: () => void, nextStep: () => void, prescriptionData: PrescriptionData | null }) => {
     const [isLoading, setIsLoading] = useState(false);
+    const [patientName, setPatientName] = useState(prescriptionData?.patientName || '');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -312,15 +335,29 @@ const UploadStep2 = ({ prevStep, nextStep }: { prevStep: () => void, nextStep: (
 
     return (
         <motion.div initial={{ x: 30, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -30, opacity: 0 }} transition={{ ease: 'easeInOut' }}>
-            <h2 className="text-2xl font-bold mb-6 text-center">Confirm Delivery Details</h2>
+            <h2 className="text-2xl font-bold mb-6 text-center">Confirm Details</h2>
+            
+            {prescriptionData && prescriptionData.medications.length > 0 && (
+                <div className="mb-6 bg-surface p-4 rounded-lg border border-border">
+                    <h3 className="text-sm font-semibold text-text-secondary mb-2">Medications Detected by AI:</h3>
+                    <ul className="space-y-2">
+                        {prescriptionData.medications.map((med, index) => (
+                            <li key={index} className="text-sm p-2 bg-background rounded-md">
+                                <strong className="text-primary">{med.name}</strong> ({med.dosage}) - <span className="text-text-secondary">{med.instructions}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                    <label className="text-sm font-medium text-text-secondary">Full Name</label>
-                    <input type="text" required className="w-full p-2 mt-1 border border-border rounded-md" />
+                    <label className="text-sm font-medium text-text-secondary">Patient's Full Name (from prescription)</label>
+                    <input type="text" value={patientName} onChange={e => setPatientName(e.target.value)} required className="w-full p-2 mt-1 border border-border rounded-md" />
                 </div>
                 <div>
                     <label className="text-sm font-medium text-text-secondary">Mobile Number</label>
-                    <input type="mob" required className="w-full p-2 mt-1 border border-border rounded-md"/>
+                    <input type="tel" required className="w-full p-2 mt-1 border border-border rounded-md"/>
                 </div>
                  <div>
                     <label className="text-sm font-medium text-text-secondary">Delivery Address</label>
@@ -350,4 +387,3 @@ const UploadSuccess = ({ closeModal }: { closeModal: () => void }) => (
 );
 
 export default PharmacyPage;
-

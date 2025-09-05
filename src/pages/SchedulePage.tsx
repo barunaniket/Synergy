@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, HeartPulse, CheckCircle, ArrowRight, ArrowLeft, UploadCloud } from 'lucide-react'; // Import UploadCloud
+import { User, HeartPulse, CheckCircle, ArrowRight, ArrowLeft, UploadCloud, Loader2 } from 'lucide-react';
+import { getSummaryFromImage } from '../services/gemini'; // Import our new AI service
 
 const steps = [
   { id: 1, name: 'Patient Details', icon: User },
@@ -20,8 +21,11 @@ function SchedulePage() {
     bloodType: 'A+',
     history: '',
   });
-  const [medicalRecordFile, setMedicalRecordFile] = useState<File | null>(null); // New state for the file
-
+  const [medicalRecordFile, setMedicalRecordFile] = useState<File | null>(null);
+  
+  // New state for AI processing
+  const [isProcessing, setIsProcessing] = useState(false);
+  
   const nextStep = () => setCurrentStep(prev => (prev < steps.length ? prev + 1 : prev));
   const prevStep = () => setCurrentStep(prev => (prev > 1 ? prev - 1 : prev));
 
@@ -30,10 +34,19 @@ function SchedulePage() {
     setFormData(prev => ({ ...prev, [id]: value }));
   };
   
-  // New handler for the file input
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Updated handler for the file input to call the AI
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      setMedicalRecordFile(e.target.files[0]);
+      const file = e.target.files[0];
+      setMedicalRecordFile(file);
+      setIsProcessing(true);
+      
+      // Call the AI service to get the summary
+      const summary = await getSummaryFromImage(file);
+      
+      // Update the form with the AI-generated summary
+      setFormData(prev => ({ ...prev, history: summary }));
+      setIsProcessing(false);
     }
   };
 
@@ -121,20 +134,29 @@ function SchedulePage() {
                             <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
                         </select>
                     </div>
-                    {/* --- New File Upload Input --- */}
+                    {/* --- Updated File Upload Input --- */}
                     <div>
                         <label className="block text-sm font-medium text-text-secondary mb-2">Previous Medical Records (Optional)</label>
-                        <label htmlFor="file-upload" className="relative cursor-pointer bg-background rounded-md border-2 border-dashed border-border flex flex-col items-center justify-center p-6 hover:border-primary transition-colors">
-                            <UploadCloud className="h-8 w-8 text-text-secondary" />
-                            <span className="mt-2 text-sm text-text-secondary">
-                                {medicalRecordFile ? medicalRecordFile.name : 'Click to upload a file'}
+                        <label htmlFor="file-upload" className={`relative cursor-pointer bg-background rounded-md border-2 border-dashed border-border flex flex-col items-center justify-center p-6 hover:border-primary transition-colors ${isProcessing ? 'cursor-not-allowed' : ''}`}>
+                            {isProcessing ? (
+                                <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                            ) : (
+                                <UploadCloud className="h-8 w-8 text-text-secondary" />
+                            )}
+                            <span className="mt-2 text-sm text-text-secondary text-center">
+                                {isProcessing 
+                                    ? 'AI is analyzing your document...' 
+                                    : medicalRecordFile 
+                                        ? medicalRecordFile.name 
+                                        : 'Upload a document for an AI summary'
+                                }
                             </span>
                         </label>
-                        <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleFileChange} />
+                        <input id="file-upload" name="file-upload" type="file" className="sr-only" onChange={handleFileChange} disabled={isProcessing} />
                     </div>
                     <div>
                         <label htmlFor="history" className="block text-sm font-medium text-text-secondary mb-2">Brief Medical History</label>
-                        <textarea id="history" value={formData.history} onChange={handleChange} rows={4} className="w-full p-2 border border-border rounded-md bg-background focus:ring-primary focus:border-primary"></textarea>
+                        <textarea id="history" value={formData.history} onChange={handleChange} rows={6} className="w-full p-2 border border-border rounded-md bg-background focus:ring-primary focus:border-primary" placeholder={isProcessing ? 'AI is generating summary...' : 'A summary will be generated here, or you can type manually.'}></textarea>
                     </div>
                 </div>
               )}
@@ -151,7 +173,6 @@ function SchedulePage() {
                         <p><strong>Email:</strong> {formData.email}</p>
                         <p><strong>Phone:</strong> {formData.phone}</p>
                         <p><strong>Blood Type:</strong> {formData.bloodType}</p>
-                        {/* --- Display uploaded file name --- */}
                         <p><strong>Medical Record:</strong> {medicalRecordFile?.name || 'Not provided'}</p>
                         <p><strong>History:</strong> {formData.history || 'Not provided'}</p>
                     </div>

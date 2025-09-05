@@ -30,6 +30,8 @@ import {
   Stethoscope,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown'; // Import ReactMarkdown
+import { getEmergencyGuidance } from '../services/gemini'; // Import our new AI service
 
 // --- ENHANCED DATA STRUCTURE FOR EMERGENCIES ---
 const emergencyTypes = [
@@ -347,7 +349,7 @@ const EmergencyPage = () => {
                 onBack={handleGoBack}
               />
             )}
-            {step === 'result' && <EmergencyResult key="result" result={selectedEmergency.results} onReset={handleReset} navigate={navigate} />}
+            {step === 'result' && <EmergencyResult key="result" result={selectedEmergency.results} formData={formData} onReset={handleReset} navigate={navigate} />}
           </AnimatePresence>
         </div>
       </main>
@@ -730,10 +732,24 @@ const EmergencyForm = ({ emergency, formData, isLoading, onChange, onSubmit, onB
   </motion.div>
 );
 
-const EmergencyResult = ({ result, onReset, navigate }: any) => {
+const EmergencyResult = ({ result, formData, onReset, navigate }: any) => {
   const isTransplant = result.isTransplant || false;
+  const [aiGuidance, setAiGuidance] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, amount: 0.2 });
+
+  useEffect(() => {
+    const fetchGuidance = async () => {
+      setIsLoading(true);
+      const guidance = await getEmergencyGuidance(result.aiPrompt, formData);
+      setAiGuidance(guidance);
+      setIsLoading(false);
+    };
+
+    fetchGuidance();
+  }, [result.aiPrompt, formData]);
+
 
   return (
     <motion.div
@@ -763,21 +779,22 @@ const EmergencyResult = ({ result, onReset, navigate }: any) => {
           animate={isInView ? 'visible' : 'hidden'}
           variants={containerVariants}
         >
-          {result.steps.map((step: any, i: number) => (
-            <motion.div
-              key={i}
-              className="flex items-start"
-              variants={itemVariants}
-            >
-              <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-full bg-red-600 text-white font-bold text-lg mr-5 mt-1">
-                {i + 1}
-              </div>
-              <div>
-                <h4 className="font-bold text-xl text-gray-900">{step.text}</h4>
-                <p className="text-gray-600">{step.details}</p>
-              </div>
-            </motion.div>
-          ))}
+           {/* AI Guidance Display */}
+           <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-lg">
+             <h3 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
+               <Bot className="mr-3 text-red-600" /> Synergy AI Assistant
+             </h3>
+             {isLoading ? (
+               <div className="flex items-center justify-center h-48">
+                 <Zap className="animate-spin h-8 w-8 text-red-600" />
+               </div>
+             ) : (
+               <div className="prose prose-lg max-w-none">
+                 <ReactMarkdown>{aiGuidance}</ReactMarkdown>
+               </div>
+             )}
+           </div>
+
           {isTransplant && (
             <motion.div variants={itemVariants}>
               <button
@@ -808,17 +825,6 @@ const EmergencyResult = ({ result, onReset, navigate }: any) => {
                 transition={{ duration: 3, repeat: Infinity, repeatType: 'reverse', ease: 'linear' }}
               />
               <span className="text-gray-500 z-10">Map loading...</span>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-lg backdrop-blur-sm">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-              <Bot className="mr-3 text-red-600" /> Synergy AI Assistant
-            </h3>
-            <p className="text-gray-600 mb-4">
-              Our AI provides real-time, voice-guided assistance. Available soon.
-            </p>
-            <div className="w-full p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm text-gray-600 italic">"{result.aiPrompt}"</p>
             </div>
           </div>
         </motion.div>
