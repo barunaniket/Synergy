@@ -13,9 +13,12 @@ import PharmacyPage from './pages/PharmacyPage';
 import HomeCarePage from './pages/HomeCarePage';
 import TelehealthPage from './pages/TelehealthPage';
 import Ambulance from './pages/Ambulance';
-import { Chatbot } from './components/Chatbot'; // 1. Import the Chatbot
+import AINewsPage from './pages/AINewsPage';
+import ArticlePage from './pages/ArticlePage';
+import { Chatbot } from './components/Chatbot';
 
-const Layout = () => {
+// This Layout is for all pages EXCEPT the AI News and Article pages
+const DefaultLayout = () => {
   return (
     <div>
       <Navbar />
@@ -33,7 +36,6 @@ function App() {
     const rect = target.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-
     target.style.setProperty("--x", `${x}px`);
     target.style.setProperty("--y", `${y}px`);
   };
@@ -56,7 +58,8 @@ function App() {
       <div className="relative">
         <Router>
           <Routes>
-            <Route path="/" element={<Layout />}>
+            {/* All standard pages go here, using the DefaultLayout */}
+            <Route path="/" element={<DefaultLayout />}>
               <Route index element={<HomePage />} />
               <Route path="find-a-hospital" element={<FindHospitalPage />} />
               <Route path="hospital/:hospitalId" element={<HospitalDetailPage />} />
@@ -70,9 +73,13 @@ function App() {
               <Route path="telehealth" element={<TelehealthPage />} />
               <Route path="ambulance" element={<Ambulance />} />
             </Route>
+            
+            {/* The AI News and Article pages are separate and do NOT use the DefaultLayout */}
+            <Route path="ai-news" element={<AINewsPage />} />
+            <Route path="article/:slug" element={<ArticlePage />} />
           </Routes>
         </Router>
-        <Chatbot /> {/* 2. Add the Chatbot component here */}
+        <Chatbot />
       </div>
     </div>
   );
