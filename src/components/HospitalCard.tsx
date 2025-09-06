@@ -1,5 +1,6 @@
-import { MapPin, Heart, Clock, DollarSign } from 'lucide-react';
+import { MapPin, Heart, Clock, DollarSign, Bot, TrendingUp, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { AiHospitalAnalysis } from '../services/gemini';
 
 export interface Hospital {
   id: number;
@@ -14,12 +15,13 @@ export interface Hospital {
 
 interface HospitalCardProps {
   hospital: Hospital;
+  aiAnalysis?: AiHospitalAnalysis;
 }
 
-function HospitalCard({ hospital }: HospitalCardProps) {
+function HospitalCard({ hospital, aiAnalysis }: HospitalCardProps) {
   return (
-    <Link to={`/hospital/${hospital.id}`} className="block">
-      <div className="w-full bg-surface rounded-xl border border-border shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+    <Link to={`/hospital/${hospital.id}`} className="block h-full">
+      <div className="w-full h-full bg-surface rounded-xl border border-border shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1 flex flex-col">
         <div className="md:flex">
           <div className="md:flex-shrink-0">
             <img
@@ -29,7 +31,7 @@ function HospitalCard({ hospital }: HospitalCardProps) {
             />
           </div>
 
-          <div className="p-6 flex flex-col justify-between">
+          <div className="p-6 flex flex-col justify-between flex-grow">
             <div>
               <div className="uppercase tracking-wide text-sm text-primary font-semibold">
                 {hospital.distance} miles away
@@ -42,17 +44,33 @@ function HospitalCard({ hospital }: HospitalCardProps) {
               </p>
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-4 text-sm">
-              <div className="flex items-center text-text-secondary">
-                <Clock className="h-4 w-4 mr-2 text-primary" />
-                <span>Avg. {hospital.waitTime} day wait</span>
-              </div>
-              <div className="flex items-center text-text-secondary">
-                <DollarSign className="h-4 w-4 mr-2 text-primary" />
-                <span>Est. ${hospital.estimatedCost.toLocaleString()}</span>
-              </div>
+            {/* CORRECTED LOGIC: Conditionally Render AI Analysis OR Historical Data (without cost) */}
+            <div className="mt-4 text-sm">
+              {aiAnalysis ? (
+                <div className="space-y-2">
+                  <div className="flex items-center text-primary font-semibold">
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      <span>AI Est. Wait: {aiAnalysis.predictedWaitTime}</span>
+                  </div>
+                  <div className="flex items-center text-primary font-semibold">
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      <span>AI Est. Cost: {aiAnalysis.predictedCost}</span>
+                  </div>
+                  <div className="flex items-center text-primary font-semibold">
+                      <ShieldCheck className="h-4 w-4 mr-2" />
+                      <span>AI Outcome Score: {aiAnalysis.outcomeScore}%</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-4">
+                  <div className="flex items-center text-text-secondary">
+                    <Clock className="h-4 w-4 mr-2 text-primary" />
+                    <span>Avg. {hospital.waitTime} day wait</span>
+                  </div>
+                </div>
+              )}
             </div>
-
+            
             <div className="mt-4">
               <h4 className="font-semibold text-text-secondary text-sm mb-2 flex items-center">
                 <Heart className="h-4 w-4 mr-2 text-primary" />
@@ -68,6 +86,17 @@ function HospitalCard({ hospital }: HospitalCardProps) {
             </div>
           </div>
         </div>
+
+        {aiAnalysis?.reason && (
+          <div className="bg-primary/5 p-4 border-t border-border mt-auto">
+            <div className="flex items-start gap-3">
+              <Bot className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-text-secondary">
+                <span className="font-semibold text-primary">AI Recommendation:</span> {aiAnalysis.reason}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </Link>
   );

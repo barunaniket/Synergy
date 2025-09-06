@@ -1,10 +1,12 @@
 import HospitalCard, { Hospital } from './HospitalCard';
-import { motion, AnimatePresence } from 'framer-motion'; // Import AnimatePresence
+import { motion, AnimatePresence } from 'framer-motion';
 import HospitalCardSkeleton from './HospitalCardSkeleton';
+import { AiHospitalAnalysis } from '../services/gemini';
 
 interface HospitalListProps {
   hospitals: Hospital[];
   isLoading: boolean;
+  aiAnalysis?: { [key: number]: AiHospitalAnalysis }; // Add aiAnalysis map
 }
 
 const containerVariants = {
@@ -20,10 +22,10 @@ const containerVariants = {
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 },
-  exit: { opacity: 0, y: -20 }, // Add an exit animation
+  exit: { opacity: 0, y: -20 },
 };
 
-function HospitalList({ hospitals, isLoading }: HospitalListProps) {
+function HospitalList({ hospitals, isLoading, aiAnalysis }: HospitalListProps) {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -60,7 +62,8 @@ function HospitalList({ hospitals, isLoading }: HospitalListProps) {
             exit="exit"
             layout 
           >
-            <HospitalCard hospital={hospital} />
+            {/* Pass the corresponding analysis object to the card */}
+            <HospitalCard hospital={hospital} aiAnalysis={aiAnalysis?.[hospital.id]} />
           </motion.div>
         ))}
       </AnimatePresence>

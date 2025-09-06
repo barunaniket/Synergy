@@ -31,29 +31,23 @@ function HeroSection() {
     return () => clearInterval(interval);
   }, []);
 
-  // 1. Create a reference to the section element
   const targetRef = useRef<HTMLDivElement>(null);
   
-  // 2. Track scroll progress relative to the section
   const { scrollYProgress } = useScroll({
     target: targetRef,
     offset: ["start start", "end start"],
   });
 
-  // 3. Create parallax effects based on scroll progress
   const textY = useTransform(scrollYProgress, [0, 1], ["0%", "-50%"]);
   const textOpacity = useTransform(scrollYProgress, [0, 0.7, 1], [1, 1, 0]);
   const imageScale = useTransform(scrollYProgress, [0, 1], [1, 1.25]);
 
   return (
-    // Make the section taller to provide scroll room
     <section ref={targetRef} className="relative w-full h-[200vh]">
-      {/* Use sticky positioning to keep the content in view while scrolling */}
       <div className="sticky top-0 h-screen flex items-center overflow-hidden">
         <div className="container mx-auto px-4 md:px-6">
           <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
             <motion.div
-              // Apply the scroll-driven animations
               style={{ y: textY, opacity: textOpacity }}
               className="flex flex-col items-center justify-center space-y-6 text-center lg:items-start lg:text-left z-10"
             >
@@ -90,7 +84,6 @@ function HeroSection() {
                   key={currentIndex}
                   src={images[currentIndex].src}
                   alt={images[currentIndex].alt}
-                  // Apply scroll-driven scale and also keep the cross-fade
                   style={{ scale: imageScale }}
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}

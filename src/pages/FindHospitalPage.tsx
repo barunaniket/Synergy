@@ -3,7 +3,8 @@ import SearchFilters from '../components/SearchFilters';
 import HospitalList from '../components/HospitalList';
 import { Hospital } from '../components/HospitalCard';
 import { SlidersHorizontal } from 'lucide-react';
-import { useDebounce } from '../hooks/useDebounce'; // Import the new hook
+import { useDebounce } from '../hooks/useDebounce';
+import { getAiRankedHospitals, AiHospitalAnalysis } from '../services/gemini';
 
 const allHospitals: Hospital[] = [
   {
@@ -400,70 +401,82 @@ const allHospitals: Hospital[] = [
 
 
 function FindHospitalPage() {
-  const [hospitals, setHospitals] = useState<Hospital[]>([]);
+  const [displayedHospitals, setDisplayedHospitals] = useState<Hospital[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState({
     location: '',
     organ: 'Any Organ',
     budget: '',
+    urgency: 'Standard',
   });
   const [sortBy, setSortBy] = useState('distance');
+  const [isRanking, setIsRanking] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<{ [key: number]: AiHospitalAnalysis }>({});
 
-  // Debounce the location filter input to avoid rapid re-renders
   const debouncedLocation = useDebounce(filters.location, 300);
 
   useEffect(() => {
     setIsLoading(true);
-    const timer = setTimeout(() => {
-      setHospitals(allHospitals);
-      setIsLoading(false);
+    setTimeout(() => {
+        setDisplayedHospitals(allHospitals);
+        setIsLoading(false);
     }, 650);
-    return () => clearTimeout(timer);
   }, []);
-  
-  // Effect to add a small delay when filters change for a smoother feel
-  useEffect(() => {
-    if (!isLoading) {
-        const timer = setTimeout(() => {
-            // This doesn't need to do anything, it just forces a re-render cycle
-            // for the animations after a short delay
-        }, 350);
-        return () => clearTimeout(timer);
-    }
-  }, [filters.organ, filters.budget, sortBy]);
 
-
-  const processedHospitals = useMemo(() => {
-    // Note: We use the debouncedLocation for filtering
-    let filtered = hospitals.filter(hospital => {
+  const filteredHospitals = useMemo(() => {
+    return allHospitals.filter(hospital => {
       const { organ, budget } = filters;
-      const matchesLocation = debouncedLocation.trim() === '' || 
-        hospital.name.toLowerCase().includes(debouncedLocation.toLowerCase()) || 
+      const matchesLocation = debouncedLocation.trim() === '' ||
+        hospital.name.toLowerCase().includes(debouncedLocation.toLowerCase()) ||
         hospital.location.toLowerCase().includes(debouncedLocation.toLowerCase());
       const matchesOrgan = organ === 'Any Organ' || hospital.availableOrgans.includes(organ);
       const maxBudget = parseInt(budget, 10);
       const matchesBudget = !budget || hospital.estimatedCost <= maxBudget;
       return matchesLocation && matchesOrgan && matchesBudget;
     });
+  }, [debouncedLocation, filters.organ, filters.budget]);
+  
+  useEffect(() => {
+    const processHospitals = async () => {
+      if (isLoading) return;
 
-    filtered.sort((a, b) => {
-        switch (sortBy) {
-            case 'distance':
-                return a.distance - b.distance;
-            case 'waitTime':
-                return a.waitTime - b.waitTime;
-            case 'cost':
-                return a.estimatedCost - b.estimatedCost;
-            default:
-                return 0;
-        }
-    });
+      if (sortBy === 'ai') {
+        setIsRanking(true);
+        setAiAnalysis({}); 
+        const rankedData = await getAiRankedHospitals(filters, filteredHospitals);
 
-    return filtered;
-  }, [debouncedLocation, filters.organ, filters.budget, hospitals, sortBy]);
+        const analysisMap: { [key: number]: AiHospitalAnalysis } = {};
+        rankedData.forEach(item => { analysisMap[item.id] = item; });
+
+        const hospitalMap = new Map(filteredHospitals.map(h => [h.id, h]));
+        const rankedHospitals = rankedData
+          .map(item => hospitalMap.get(item.id))
+          .filter((h): h is Hospital => h !== undefined);
+        
+        const remainingHospitals = filteredHospitals.filter(h => !analysisMap[h.id]);
+
+        setDisplayedHospitals([...rankedHospitals, ...remainingHospitals]);
+        setAiAnalysis(analysisMap);
+        setIsRanking(false);
+      } else {
+        setAiAnalysis({});
+        const sorted = [...filteredHospitals].sort((a, b) => {
+          switch (sortBy) {
+            case 'distance': return a.distance - b.distance;
+            case 'waitTime': return a.waitTime - b.waitTime;
+            case 'cost': return a.estimatedCost - b.estimatedCost;
+            default: return 0;
+          }
+        });
+        setDisplayedHospitals(sorted);
+      }
+    };
+
+    processHospitals();
+  }, [sortBy, filters, filteredHospitals, isLoading]);
 
   return (
-    <div className="container mx-auto px-4 md-px-6 py-12 pt-28">
+    <div className="container mx-auto px-4 md:px-6 py-12 pt-28">
       <div className="space-y-4 mb-8">
         <h1 className="text-4xl font-bold text-text-primary">Find a Hospital</h1>
         <p className="text-text-secondary mt-2">
@@ -476,7 +489,7 @@ function FindHospitalPage() {
       <div className="mt-12">
         <div className="flex flex-wrap gap-4 justify-between items-center mb-6">
             <h2 className="text-2xl font-bold text-text-primary">
-                {isLoading ? 'Finding Hospitals...' : `${processedHospitals.length} Results Found`}
+                {isLoading ? 'Finding Hospitals...' : `${filteredHospitals.length} Results Found`}
             </h2>
             <div className="flex items-center gap-2">
                 <SlidersHorizontal className="h-5 w-5 text-text-secondary" />
@@ -488,13 +501,19 @@ function FindHospitalPage() {
                     className="py-2 pl-3 pr-8 border border-border rounded-md focus:ring-primary focus:border-primary text-sm"
                     disabled={isLoading}
                 >
+                    <option value="ai">AI Recommendation</option>
                     <option value="distance">Distance</option>
                     <option value="waitTime">Wait Time</option>
                     <option value="cost">Estimated Cost</option>
                 </select>
             </div>
         </div>
-        <HospitalList hospitals={processedHospitals} isLoading={isLoading} />
+        <HospitalList 
+          hospitals={displayedHospitals} 
+          isLoading={isLoading || isRanking} 
+          aiAnalysis={aiAnalysis} 
+          organFilter={filters.organ}
+        />
       </div>
     </div>
   );

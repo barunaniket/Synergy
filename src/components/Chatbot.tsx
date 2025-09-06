@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bot, X, Send, User } from 'lucide-react';
+import { Bot, X, Send, User, Mic, Globe, RefreshCw } from 'lucide-react';
 import { getChatbotResponse } from '../services/gemini';
 import type { Content } from '@google/generative-ai';
 
@@ -24,23 +24,85 @@ const TypingIndicator = () => (
   </motion.div>
 );
 
+// --- Add SpeechRecognition interface for TypeScript ---
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition: SpeechRecognition | null = null;
+if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+}
+
+
 export function Chatbot() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'model',
-      content: "Hello! I'm the Synergy AI Assistant. How can I help you today?",
+      content: "Hello! I'm the Synergy AI Assistant. How can I help you today? You can also use the microphone to talk to me.",
     },
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [recognitionError, setRecognitionError] = useState<string | null>(null);
+  const [recognitionLang, setRecognitionLang] = useState('en-IN'); // Default to English (India)
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  useEffect(scrollToBottom, [messages]);
+  useEffect(scrollToBottom, [messages, recognitionError]);
+
+  // --- Speech Recognition Logic ---
+  useEffect(() => {
+    if (!recognition) return;
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      setRecognitionError(null); // Clear previous errors
+      const transcript = event.results[0][0].transcript;
+      setInput(transcript);
+      setIsListening(false);
+    };
+
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      console.error("Speech recognition error:", event.error);
+      if (event.error === 'network') {
+        setRecognitionError("Voice service unavailable. Please check your network connection.");
+      } else if (event.error === 'no-speech') {
+        setRecognitionError("No speech was detected. Please make sure your microphone is working.");
+      } else {
+        setRecognitionError("An error occurred with voice recognition.");
+      }
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+  }, []);
+
+  const handleToggleListening = () => {
+    if (!recognition) {
+        alert("Sorry, your browser does not support voice recognition.");
+        return;
+    }
+
+    setRecognitionError(null); // Clear error on new attempt
+
+    if (isListening) {
+        recognition.stop();
+        setIsListening(false);
+    } else {
+        setInput('');
+        recognition.lang = recognitionLang;
+        recognition.start();
+        setIsListening(true);
+    }
+  };
+
 
   const handleSend = async () => {
     if (input.trim() === '' || isLoading) return;
@@ -50,10 +112,8 @@ export function Chatbot() {
     setInput('');
     setIsLoading(true);
 
-    // **THE FIX IS HERE**
-    // Prepare history for the AI model, filtering out the initial greeting
     const historyForAI = messages
-        .filter((msg, index) => !(index === 0 && msg.role === 'model')) // Exclude the first message if it's from the model
+        .filter((msg, index) => !(index === 0 && msg.role === 'model'))
         .map(msg => ({
             role: msg.role,
             parts: [{ text: msg.content }]
@@ -69,7 +129,7 @@ export function Chatbot() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !isListening) {
       handleSend();
     }
   };
@@ -86,7 +146,7 @@ export function Chatbot() {
             transition={{ duration: 0.3, ease: 'easeOut' }}
             className="fixed bottom-24 right-4 sm:right-8 w-[calc(100%-2rem)] sm:w-96 h-[60vh] bg-surface rounded-2xl shadow-2xl border border-border flex flex-col z-50"
           >
-            {/* Header */}
+            {/* Header with Language Selector */}
             <header className="flex items-center justify-between p-4 border-b border-border bg-background rounded-t-2xl">
               <div className="flex items-center gap-3">
                 <div className="bg-primary/10 p-2 rounded-full">
@@ -94,9 +154,24 @@ export function Chatbot() {
                 </div>
                 <h3 className="text-lg font-bold text-text-primary">Synergy AI Assistant</h3>
               </div>
-              <button onClick={() => setIsOpen(false)} className="text-text-secondary hover:text-text-primary">
-                <X size={20} />
-              </button>
+              <div className="flex items-center gap-2">
+                <div className="relative">
+                  <Globe size={16} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"/>
+                  <select
+                    value={recognitionLang}
+                    onChange={(e) => setRecognitionLang(e.target.value)}
+                    className="pl-8 pr-2 py-1 text-xs border border-border rounded-md bg-surface appearance-none focus:ring-1 focus:ring-primary focus:outline-none"
+                    title="Select voice language"
+                  >
+                    <option value="en-IN">English (India)</option>
+                    <option value="en-US">English (US)</option>
+                    <option value="hi-IN">हिन्दी (Hindi)</option>
+                  </select>
+                </div>
+                <button onClick={() => setIsOpen(false)} className="text-text-secondary hover:text-text-primary">
+                  <X size={20} />
+                </button>
+              </div>
             </header>
 
             {/* Message Area */}
@@ -123,24 +198,41 @@ export function Chatbot() {
                 </div>
               ))}
               {isLoading && <TypingIndicator />}
+              {recognitionError && (
+                  <div className="flex flex-col items-center justify-center gap-2 my-2">
+                      <p className="text-xs text-red-500 bg-red-100/50 px-3 py-1 rounded-full">{recognitionError}</p>
+                      <button onClick={handleToggleListening} className="flex items-center gap-1 text-xs text-primary hover:underline">
+                        <RefreshCw size={12} />
+                        Try Again
+                      </button>
+                  </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
 
             {/* Input Area */}
-            <footer className="p-4 border-t border-border">
-              <div className="relative">
+            <footer className="p-4 border-t border-border bg-background rounded-b-2xl">
+              <div className="flex items-center gap-2">
                 <input
                   type="text"
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Ask a question..."
-                  className="w-full p-3 pr-12 border border-border rounded-lg focus:ring-1 focus:ring-primary focus:outline-none"
+                  placeholder={isListening ? "Listening..." : "Ask a question..."}
+                  className="w-full p-3 pr-4 border border-border rounded-lg focus:ring-1 focus:ring-primary focus:outline-none flex-1"
+                  disabled={isLoading}
                 />
                 <button
+                    onClick={handleToggleListening}
+                    className={`p-3 rounded-lg border border-transparent transition-colors ${isListening ? 'text-red-500 bg-red-100/50' : 'text-text-secondary hover:text-primary hover:bg-primary/10'}`}
+                    title={isListening ? 'Stop listening' : 'Use microphone'}
+                >
+                    <Mic size={18} />
+                </button>
+                <button
                   onClick={handleSend}
-                  disabled={isLoading}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-primary rounded-md text-white hover:bg-primary/90 disabled:bg-primary/50"
+                  disabled={isLoading || input.trim() === ''}
+                  className="p-3 bg-primary rounded-lg text-white hover:bg-primary/90 disabled:bg-primary/50 transition-colors"
                 >
                   <Send size={18} />
                 </button>
@@ -157,7 +249,7 @@ export function Chatbot() {
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
       >
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
           {isOpen ? (
             <motion.div key="close" initial={{ opacity: 0, rotate: -45 }} animate={{ opacity: 1, rotate: 0 }} exit={{ opacity: 0, rotate: 45 }}>
               <X size={28} />

@@ -1,9 +1,10 @@
 import { GoogleGenerativeAI, Part, Content } from "@google/generative-ai";
 import OpenAI from "openai";
+import { Hospital } from "../components/HospitalCard";
 
 // Get the API keys from environment variables
 const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
-const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY; // Add this line
+const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY; 
 
 if (!geminiApiKey) {
   throw new Error("VITE_GEMINI_API_KEY is not set in the environment variables");
@@ -36,6 +37,16 @@ async function fileToGenerativePart(file: File): Promise<Part> {
     inlineData: { data: await base64EncodedDataPromise, mimeType: file.type },
   };
 }
+
+// --- Define the new, richer data structure for AI analysis ---
+export interface AiHospitalAnalysis {
+  id: number;
+  reason: string;
+  predictedWaitTime: string; // e.g., "45-55 days"
+  predictedCost: string;     // e.g., "$95,000 - $110,000"
+  outcomeScore: number;      // e.g., 85 (representing 85%)
+}
+
 
 /**
  * Generates a summary from an uploaded medical document image.
@@ -138,7 +149,7 @@ export const getPrescriptionDetailsFromImage = async (image: File): Promise<any>
                                 {
                                     type: "image_url",
                                     image_url: {
-                                        "url": `data:${image.type};base64,${base64Image.inlineData?.data}`
+                                        "url": `data:${base64Image.inlineData?.data}`
                                     }
                                 },
                             ],
@@ -188,7 +199,7 @@ export const getEmergencyGuidance = async (basePrompt: string, formData: any): P
         if (openaiApiKey) {
             try {
                 const response = await openai.chat.completions.create({
-                    model: "gpt-4",
+                    model: "gpt-3.5-turbo",
                     messages: [{ role: "user", content: prompt }],
                 });
                 return response.choices[0].message.content || "Error: Could not retrieve AI guidance.";
@@ -201,12 +212,149 @@ export const getEmergencyGuidance = async (basePrompt: string, formData: any): P
     }
 };
 
+/**
+ * Ranks a list of hospitals and provides detailed AI analysis for each.
+ */
+export const getAiRankedHospitals = async (
+  filters: { location: string; organ: string; budget: string; urgency: string },
+  hospitals: Hospital[]
+): Promise<AiHospitalAnalysis[]> => {
+  // This function remains unchanged
+  console.log("Requesting AI analysis for", hospitals.length, "hospitals with filters:", filters);
+
+  if (hospitals.length === 0) {
+    return [];
+  }
+
+  const simplifiedHospitals = hospitals.map(h => ({
+    id: h.id,
+    name: h.name,
+    distance: h.distance,
+    historicalWaitTime: h.waitTime,
+    historicalCost: h.estimatedCost,
+  }));
+
+  const prompt = `
+    You are an expert medical concierge AI with a predictive analytics engine. Your task is to analyze and rank a list of hospitals for a user, providing a detailed, predictive breakdown for each.
+
+    **User's Criteria:**
+    - Organ Needed: ${filters.organ}
+    - Maximum Budget: $${filters.budget || 'Not specified'}
+    - Urgency: ${filters.urgency}
+    - Preferred Location: ${filters.location || 'Not specified'}
+
+    **Your Predictive Tasks:**
+    1.  **Rank the Hospitals**: Order the list from most to least recommended based on the user's criteria. Prioritize 'historicalWaitTime' for 'Critical' urgency, balance wait time and distance for 'Urgent', and consider all factors for 'Standard'.
+    2.  **Predict Wait Time**: Based on the 'historicalWaitTime' and the user's 'Urgency', provide a realistic *predicted range*. For 'Critical' urgency, the predicted time might be slightly less than historical. For 'Standard', it might be slightly more. Express it as a string, e.g., "45-55 days".
+    3.  **Predict Cost**: Based on the 'historicalCost' and organ type, provide a realistic *predicted cost range*. This should be a slightly wider range than the single historical data point. Express it as a string, e.g., "$95,000 - $110,000".
+    4.  **Estimate Outcome Score**: Generate a plausible "Outcome Score" (a number between 70 and 95) for each hospital. This score represents a hypothetical success rate. Give hospitals with lower wait times and established names (like Apollo, Fortis, Manipal) slightly higher scores. This is a simulation.
+    5.  **Provide a Reason**: Write a concise, compelling sentence (max 15 words) that justifies the ranking, incorporating your predictions.
+
+    **Available Hospitals (JSON format):**
+    ${JSON.stringify(simplifiedHospitals, null, 2)}
+
+    **Your Task:**
+    Return a JSON array of objects. Each object must represent a hospital and contain the following keys: "id" (number), "reason" (string), "predictedWaitTime" (string), "predictedCost" (string), and "outcomeScore" (number). The array must be in the ranked order.
+    
+    **IMPORTANT: Your response must ONLY be the JSON array of objects, with no other text, comments, or formatting.**
+
+    Example Response:
+    [
+      {
+        "id": 3,
+        "reason": "Top choice due to the lowest predicted wait time and high outcome score.",
+        "predictedWaitTime": "40-50 days",
+        "predictedCost": "$60,000 - $75,000",
+        "outcomeScore": 92
+      },
+      {
+        "id": 1,
+        "reason": "A great balance of cost and a favorable predicted wait time.",
+        "predictedWaitTime": "48-60 days",
+        "predictedCost": "$95,000 - $110,000",
+        "outcomeScore": 88
+      }
+    ]
+  `;
+
+  try {
+    console.log("Attempting to rank with Gemini...");
+    const result = await model.generateContent(prompt);
+    const text = result.response.text();
+    console.log("AI Ranking Raw Response from Gemini:", text);
+    const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+    const rankedData = JSON.parse(cleanedText);
+     if (
+        Array.isArray(rankedData) && 
+        rankedData.every(item => 
+            typeof item.id === 'number' && 
+            typeof item.reason === 'string' &&
+            typeof item.predictedWaitTime === 'string' &&
+            typeof item.predictedCost === 'string' &&
+            typeof item.outcomeScore === 'number'
+        )
+    ) {
+      return rankedData as AiHospitalAnalysis[];
+    } else {
+      throw new Error("Invalid response format from Gemini AI.");
+    }
+  } catch (error) {
+    console.error("Error getting AI ranking from Gemini, trying OpenAI fallback:", error);
+    if (openaiApiKey) {
+        try {
+            console.log("Attempting to rank with OpenAI...");
+            const response = await openai.chat.completions.create({
+                model: "gpt-3.5-turbo",
+                messages: [{ role: "user", content: prompt }],
+            });
+            const text = response.choices[0].message.content;
+            if (!text) throw new Error("Empty response from OpenAI");
+            console.log("AI Ranking Raw Response from OpenAI:", text);
+            const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            const rankedData = JSON.parse(cleanedText);
+            
+            if (
+                Array.isArray(rankedData) &&
+                rankedData.every(item =>
+                    typeof item.id === 'number' &&
+                    typeof item.reason === 'string' &&
+                    typeof item.predictedWaitTime === 'string' &&
+                    typeof item.predictedCost === 'string' &&
+                    typeof item.outcomeScore === 'number'
+                )
+            ) {
+                return rankedData as AiHospitalAnalysis[];
+            } else {
+                throw new Error("Invalid response format from OpenAI AI.");
+            }
+        } catch (openaiError) {
+             console.error("Error getting AI ranking from OpenAI:", openaiError);
+             return hospitals.map(h => ({ 
+                id: h.id, 
+                reason: "AI analysis failed. Displaying raw data.",
+                predictedWaitTime: `${h.waitTime} days`,
+                predictedCost: `$${h.estimatedCost.toLocaleString()}`,
+                outcomeScore: 70
+            }));
+        }
+    }
+    // Final fallback if both services fail
+    return hospitals.map(h => ({ 
+        id: h.id, 
+        reason: "AI analysis failed. Displaying raw data.",
+        predictedWaitTime: `${h.waitTime} days`,
+        predictedCost: `$${h.estimatedCost.toLocaleString()}`,
+        outcomeScore: 70
+    }));
+  }
+};
+
 
 // --- UPDATED CHATBOT KNOWLEDGE BASE ---
 const knowledgeBase = `
 You are the "Synergy AI Assistant", a helpful and friendly chatbot for the Synergy web platform.
 Your goal is to answer user questions and guide them through the site based on the context provided below.
-Keep your answers concise and helpful.
+Keep your answers concise and helpful. You are multilingual. If the user asks a question in a language other than English (like Hindi, Spanish, etc.), you MUST respond in that same language.
 
 **Synergy Platform Information:**
 - **Main Goal:** Synergy connects patients needing urgent specialty care with hospitals that have available capacity.
@@ -222,7 +370,7 @@ Keep your answers concise and helpful.
 
 
 export const getChatbotResponse = async (history: Content[]): Promise<string> => {
-    // This function's logic remains the same, only the knowledgeBase it uses has changed.
+    // This function's logic remains the same
     console.log("Getting chatbot response for history:", history);
     try {
         const lastMessage = history[history.length - 1].parts[0].text;
@@ -242,7 +390,7 @@ export const getChatbotResponse = async (history: Content[]): Promise<string> =>
         if (openaiApiKey) {
             try {
                 const response = await openai.chat.completions.create({
-                    model: "gpt-4",
+                    model: "gpt-3.5-turbo",
                     messages: history.map(h => ({
                         role: h.role as 'user' | 'assistant',
                         content: Array.isArray(h.parts) ? h.parts[0].text || '' : h.parts
