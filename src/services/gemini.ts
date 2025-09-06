@@ -1,15 +1,29 @@
 import { GoogleGenerativeAI, Part, Content } from "@google/generative-ai";
+import OpenAI from "openai";
 
-// Get the API key from environment variables
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+// Get the API keys from environment variables
+const geminiApiKey = import.meta.env.VITE_GEMINI_API_KEY;
+const openaiApiKey = import.meta.env.VITE_OPENAI_API_KEY; // Add this line
 
-if (!apiKey) {
+if (!geminiApiKey) {
   throw new Error("VITE_GEMINI_API_KEY is not set in the environment variables");
 }
 
+if (!openaiApiKey) {
+    console.warn("VITE_OPENAI_API_KEY is not set. OpenAI fallback will not be available.");
+}
+
+
 // Initialize the Google AI SDK
-const genAI = new GoogleGenerativeAI(apiKey);
+const genAI = new GoogleGenerativeAI(geminiApiKey);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+    apiKey: openaiApiKey,
+    dangerouslyAllowBrowser: true // Required for client-side usage
+});
+
 
 // --- Helper function to convert a File to a GoogleGenerativeAI.Part ---
 async function fileToGenerativePart(file: File): Promise<Part> {
@@ -22,7 +36,6 @@ async function fileToGenerativePart(file: File): Promise<Part> {
     inlineData: { data: await base64EncodedDataPromise, mimeType: file.type },
   };
 }
-
 
 /**
  * Generates a summary from an uploaded medical document image.
@@ -45,7 +58,33 @@ export const getSummaryFromImage = async (image: File): Promise<string> => {
         console.log("AI Summary Response:", text);
         return text;
     } catch (error) {
-        console.error("Error processing image with AI:", error);
+        console.error("Error processing image with Gemini, trying OpenAI:", error);
+        if (openaiApiKey) {
+            try {
+                const base64Image = await fileToGenerativePart(image);
+                const response = await openai.chat.completions.create({
+                    model: "gpt-4-vision-preview",
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "text", text: prompt },
+                                {
+                                    type: "image_url",
+                                    image_url: {
+                                        "url": `data:${image.type};base64,${base64Image.inlineData?.data}`
+                                    }
+                                },
+                            ],
+                        },
+                    ],
+                });
+                return response.choices[0].message.content || "Error: Could not process the document.";
+            } catch (openaiError) {
+                console.error("Error processing image with OpenAI:", openaiError);
+                return "Error: Could not process the document with either service. Please enter the summary manually.";
+            }
+        }
         return "Error: Could not process the document. Please enter the summary manually.";
     }
 };
@@ -85,7 +124,34 @@ export const getPrescriptionDetailsFromImage = async (image: File): Promise<any>
         const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
         return JSON.parse(cleanedText);
     } catch (error) {
-        console.error("Error processing prescription with AI:", error);
+        console.error("Error processing prescription with Gemini, trying OpenAI:", error);
+        if (openaiApiKey) {
+            try {
+                const base64Image = await fileToGenerativePart(image);
+                const response = await openai.chat.completions.create({
+                    model: "gpt-4-vision-preview",
+                    messages: [
+                        {
+                            role: "user",
+                            content: [
+                                { type: "text", text: prompt },
+                                {
+                                    type: "image_url",
+                                    image_url: {
+                                        "url": `data:${image.type};base64,${base64Image.inlineData?.data}`
+                                    }
+                                },
+                            ],
+                        },
+                    ],
+                });
+                const cleanedText = response.choices[0].message.content?.replace(/```json/g, '').replace(/```/g, '').trim() || '{}';
+                return JSON.parse(cleanedText);
+            } catch (openaiError) {
+                console.error("Error processing prescription with OpenAI:", openaiError);
+                return { patientName: '', medications: [] };
+            }
+        }
         return { patientName: '', medications: [] };
     }
 };
@@ -112,15 +178,27 @@ export const getEmergencyGuidance = async (basePrompt: string, formData: any): P
     6.  Include a disclaimer that this is not a substitute for professional medical advice and to prioritize instructions from emergency dispatchers.
     Generate the response now.
   `;
-  try {
-    const result = await model.generateContent(prompt);
-    const response = result.response;
-    const text = response.text();
-    return text;
-  } catch (error) {
-    console.error("Error fetching AI guidance:", error);
-    return "### Could Not Retrieve AI Guidance\n\nPlease follow standard first-aid procedures and await instructions from emergency services.";
-  }
+    try {
+        const result = await model.generateContent(prompt);
+        const response = result.response;
+        const text = response.text();
+        return text;
+    } catch (error) {
+        console.error("Error fetching AI guidance from Gemini, trying OpenAI:", error);
+        if (openaiApiKey) {
+            try {
+                const response = await openai.chat.completions.create({
+                    model: "gpt-4",
+                    messages: [{ role: "user", content: prompt }],
+                });
+                return response.choices[0].message.content || "Error: Could not retrieve AI guidance.";
+            } catch (openaiError) {
+                console.error("Error fetching AI guidance from OpenAI:", openaiError);
+                return "### Could Not Retrieve AI Guidance\n\nPlease follow standard first-aid procedures and await instructions from emergency services.";
+            }
+        }
+        return "### Could Not Retrieve AI Guidance\n\nPlease follow standard first-aid procedures and await instructions from emergency services.";
+    }
 };
 
 
@@ -160,7 +238,23 @@ export const getChatbotResponse = async (history: Content[]): Promise<string> =>
         console.log("Chatbot AI Response:", text);
         return text;
     } catch (error) {
-        console.error("Error getting chatbot response:", error);
+        console.error("Error getting chatbot response from Gemini, trying OpenAI:", error);
+        if (openaiApiKey) {
+            try {
+                const response = await openai.chat.completions.create({
+                    model: "gpt-4",
+                    messages: history.map(h => ({
+                        role: h.role as 'user' | 'assistant',
+                        content: Array.isArray(h.parts) ? h.parts[0].text || '' : h.parts
+                    }))
+                });
+
+                return response.choices[0].message.content || "I'm sorry, I'm having trouble connecting right now.";
+            } catch (openaiError) {
+                console.error("Error getting chatbot response from OpenAI:", openaiError);
+                return "I'm sorry, I'm having a little trouble connecting right now. Please try again in a moment.";
+            }
+        }
         return "I'm sorry, I'm having a little trouble connecting right now. Please try again in a moment.";
     }
 };

@@ -2,7 +2,7 @@
 
 interface ImportMetaEnv {
   readonly VITE_GEMINI_API_KEY: string;
-  // You can add other environment variables here if needed
+  readonly VITE_OPENAI_API_KEY: string;
 }
 
 interface ImportMeta {
