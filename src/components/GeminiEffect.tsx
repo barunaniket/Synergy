@@ -1,6 +1,6 @@
 "use client";
-import { cn } from "../utils/cn"; // This path correctly points to your file
-import { motion, MotionValue } from "framer-motion";
+import { cn } from "../utils/cn"; 
+import { motion, MotionValue, useTransform } from "framer-motion"; // Import useTransform
 import React from "react";
 
 const transition = {
@@ -9,16 +9,25 @@ const transition = {
 };
 
 export const GoogleGeminiEffect = ({
-  pathLengths,
+  scrollYProgress, // Accept scrollYProgress directly
   title,
   description,
   className,
 }: {
-  pathLengths: MotionValue[];
+  scrollYProgress: MotionValue<number>; // Define the type for scrollYProgress
   title?: string;
   description?: string;
   className?: string;
 }) => {
+  // Move the pathLengths logic inside this component
+  const pathLengths = [
+    useTransform(scrollYProgress, [0, 0.8], [0.2, 1.2]),
+    useTransform(scrollYProgress, [0, 0.8], [0.15, 1.2]),
+    useTransform(scrollYProgress, [0, 0.8], [0.1, 1.2]),
+    useTransform(scrollYProgress, [0, 0.8], [0.05, 1.2]),
+    useTransform(scrollYProgress, [0, 0.8], [0, 1.2]),
+  ];
+
   return (
     <div className={cn("sticky top-80", className)}>
       <p className="text-lg md:text-7xl font-normal pb-4 text-center bg-clip-text text-transparent bg-gradient-to-b from-neutral-100 to-neutral-300">

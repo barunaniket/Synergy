@@ -27,7 +27,7 @@ export const AINavbar = () => {
   const navItems = [
     { name: "Home", link: "/" },
     { name: "Emergency", link: "/emergency", special: true },
-    { name: "AI News", link: "/ai-news", special: true },
+    { name: "AI in Healthcare", link: "/ai-healthcare", special: true }, // Updated Link
     { name: "Find a Hospital", link: "/find-a-hospital" },
     { name: "Services", link: "/services" },
     { name: "About", link: "/about" },

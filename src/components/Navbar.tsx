@@ -7,7 +7,7 @@ import { useLocation } from 'react-router-dom';
 const navLinks = [
   { name: 'Home', href: '/' },
   { name: 'Emergency', href: '/emergency', special: true },
-  { name: 'AI News', href: '/ai-news' },
+  { name: 'AI in Healthcare', href: '/ai-healthcare' }, // Updated Link
   { name: 'Find a Hospital', href: '/find-a-hospital' },
   { name: 'Services', href: '/services' },
   { name: 'About Us', href: '/about' }, 
@@ -141,4 +141,3 @@ export function Navbar() {
     </>
   );
 }
-

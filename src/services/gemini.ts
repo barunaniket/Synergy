@@ -406,3 +406,31 @@ export const getChatbotResponse = async (history: Content[]): Promise<string> =>
         return "I'm sorry, I'm having a little trouble connecting right now. Please try again in a moment.";
     }
 };
+
+/**
+ * Generates a detailed explanation for a specific healthcare topic.
+ */
+export const getHealthcareInsight = async (topic: string): Promise<string> => {
+    console.log("Requesting AI insight for topic:", topic);
+    const prompt = `
+        You are an expert AI in healthcare technology and logistics.
+        A user wants to learn more about a specific topic related to improving the healthcare supply chain.
+
+        **Topic:** "${topic}"
+
+        **Your Task:**
+        - Provide a detailed, easy-to-understand explanation of the topic.
+        - Explain *how* AI specifically helps with this.
+        - Give a real-world example or scenario.
+        - Keep the tone professional but accessible.
+        - Use Markdown for formatting (bolding, bullet points).
+        - The entire response should be around 100-150 words.
+    `;
+    try {
+        const result = await model.generateContent(prompt);
+        return result.response.text();
+    } catch (error) {
+        console.error("Error getting healthcare insight:", error);
+        return "An error occurred while fetching details. Please try again.";
+    }
+};

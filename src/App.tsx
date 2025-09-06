@@ -13,11 +13,11 @@ import PharmacyPage from './pages/PharmacyPage';
 import HomeCarePage from './pages/HomeCarePage';
 import TelehealthPage from './pages/TelehealthPage';
 import Ambulance from './pages/Ambulance';
-import AINewsPage from './pages/AINewsPage';
+import AIHealthcarePage from './pages/AIHealthcarePage'; // Import the new page
 import ArticlePage from './pages/ArticlePage';
 import { Chatbot } from './components/Chatbot';
 
-// This Layout is for all pages EXCEPT the AI News and Article pages
+// This Layout is for all pages EXCEPT the AI pages
 const DefaultLayout = () => {
   return (
     <div>
@@ -74,8 +74,8 @@ function App() {
               <Route path="ambulance" element={<Ambulance />} />
             </Route>
             
-            {/* The AI News and Article pages are separate and do NOT use the DefaultLayout */}
-            <Route path="ai-news" element={<AINewsPage />} />
+            {/* The AI pages are separate and do NOT use the DefaultLayout */}
+            <Route path="ai-healthcare" element={<AIHealthcarePage />} />
             <Route path="article/:slug" element={<ArticlePage />} />
           </Routes>
         </Router>
