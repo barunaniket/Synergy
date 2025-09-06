@@ -47,6 +47,20 @@ export interface AiHospitalAnalysis {
   outcomeScore: number;      // e.g., 85 (representing 85%)
 }
 
+// --- NEW: Define the structure for prescription analysis ---
+export interface PrescriptionAnalysis {
+    medications: Array<{
+        name: string;
+        dosage: string;
+        alternatives: string[];
+    }>;
+    guidance: {
+        homeRemedies: string[];
+        dietPlan: string[];
+        yogaAndExercises: string[];
+    };
+}
+
 
 /**
  * Generates a summary from an uploaded medical document image.
@@ -432,5 +446,55 @@ export const getHealthcareInsight = async (topic: string): Promise<string> => {
     } catch (error) {
         console.error("Error getting healthcare insight:", error);
         return "An error occurred while fetching details. Please try again.";
+    }
+};
+
+// --- NEW FUNCTION for Prescription Analysis ---
+export const getPrescriptionAnalysis = async (image: File): Promise<PrescriptionAnalysis> => {
+    console.log("Requesting full prescription analysis for:", image.name);
+    const prompt = `
+        You are a highly advanced medical AI assistant with expertise in pharmacology, nutrition, and physical wellness.
+        Analyze the following image of a medical prescription.
+
+        Your Task is to perform a comprehensive analysis and return a structured JSON object.
+
+        1.  **Identify Medications**: Extract each medicine's name and dosage.
+        2.  **Suggest Alternatives**: For each medicine, suggest one or two common, chemically similar alternatives. Frame this as a suggestion for the user to discuss with their doctor, not as a direct replacement.
+        3.  **Provide Complementary Guidance**: Based on the likely condition the medicines treat (infer this from the drugs listed), provide holistic recovery advice. This includes:
+            - "homeRemedies": List 2-3 safe, general home remedies that could support recovery.
+            - "dietPlan": Suggest 2-3 general dietary recommendations (e.g., "Increase fluid intake", "Incorporate leafy greens").
+            - "yogaAndExercises": Suggest 2-3 gentle yoga poses or simple exercises suitable for a person who is recovering.
+
+        **IMPORTANT**: Your response MUST be ONLY a valid JSON object matching this structure, with no other text, comments, or markdown formatting.
+
+        **JSON Structure:**
+        {
+          "medications": [
+            {
+              "name": "string",
+              "dosage": "string",
+              "alternatives": ["string", "string"]
+            }
+          ],
+          "guidance": {
+            "homeRemedies": ["string", "string"],
+            "dietPlan": ["string", "string"],
+            "yogaAndExercises": ["string", "string"]
+          }
+        }
+
+        If you cannot identify any medications, return an empty medications array. Be concise in your suggestions.
+    `;
+
+    try {
+        const imagePart = await fileToGenerativePart(image);
+        const result = await model.generateContent([prompt, imagePart]);
+        const text = result.response.text();
+        console.log("AI Prescription Analysis Raw Response:", text);
+        const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(cleanedText);
+    } catch (error) {
+        console.error("Error getting prescription analysis from Gemini:", error);
+        throw new Error("Failed to analyze the prescription. The image might be unclear or the format is not supported. Please try again with a clearer image.");
     }
 };
