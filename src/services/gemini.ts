@@ -61,6 +61,15 @@ export interface PrescriptionAnalysis {
     };
 }
 
+// --- NEW: Define the structure for outbreak prediction ---
+export interface OutbreakPrediction {
+    riskLevel: 'Low' | 'Moderate' | 'High' | 'Critical';
+    emergingCondition: string;
+    keyIndicators: string[];
+    recommendedActions: string[];
+    summary: string;
+}
+
 
 /**
  * Generates a summary from an uploaded medical document image.
@@ -496,5 +505,45 @@ export const getPrescriptionAnalysis = async (image: File): Promise<Prescription
     } catch (error) {
         console.error("Error getting prescription analysis from Gemini:", error);
         throw new Error("Failed to analyze the prescription. The image might be unclear or the format is not supported. Please try again with a clearer image.");
+    }
+};
+
+// --- NEW FUNCTION for Health Sentinel ---
+export const getOutbreakPrediction = async (location: string): Promise<OutbreakPrediction> => {
+    console.log("Requesting outbreak prediction for:", location);
+    const prompt = `
+        You are the "AI-Powered Health Sentinel," a public health AI specializing in predictive epidemiology.
+        You are analyzing simulated health data for a given location. Your task is to generate a plausible, fictional outbreak prediction.
+
+        **Location for Analysis:** ${location}
+
+        **Your Task:**
+        1.  **Invent an Emerging Condition**: Create a name for a fictional, mild-to-moderate illness (e.g., "Avian Flu subtype H9N2," "Norovirus GII.4 Sydney," "Respiratory Syncytial Virus (RSV) strain B").
+        2.  **Determine a Risk Level**: Choose from 'Low', 'Moderate', 'High', or 'Critical'.
+        3.  **Identify Key Indicators**: List 2-3 fictional data points that support your prediction (e.g., "15% increase in sales of over-the-counter cough suppressants," "Uptick in school absenteeism by 20%","Rise in telehealth consultations for respiratory symptoms").
+        4.  **Recommend Actions**: Suggest 2-3 actionable, preventative measures for health authorities and the public (e.g., "Increase public health messaging on hand hygiene," "Advise hospitals to review antiviral stockpile levels," "Recommend voluntary masking in crowded indoor spaces").
+        5.  **Write a Summary**: Provide a concise summary of the situation.
+
+        **IMPORTANT**: Your response MUST be ONLY a valid JSON object matching the structure below, with no other text or formatting. The data should be fictional but realistic.
+
+        **JSON Structure:**
+        {
+          "riskLevel": "string",
+          "emergingCondition": "string",
+          "keyIndicators": ["string", "string"],
+          "recommendedActions": ["string", "string"],
+          "summary": "string"
+        }
+    `;
+
+    try {
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        console.log("AI Outbreak Prediction Raw Response:", text);
+        const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(cleanedText);
+    } catch (error) {
+        console.error("Error getting outbreak prediction from Gemini:", error);
+        throw new Error("Failed to generate a prediction. Please try again.");
     }
 };

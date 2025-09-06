@@ -2,8 +2,8 @@ import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { AINavbar } from '../components/AINavbar';
 import { AIFooter } from '../components/AIFooter';
-import { getHealthcareInsight, getPrescriptionAnalysis, PrescriptionAnalysis } from '../services/gemini';
-import { Bot, Loader2, Sparkles, UploadCloud, FileText, Heart, Leaf, Dumbbell } from 'lucide-react';
+import { getHealthcareInsight, getPrescriptionAnalysis, PrescriptionAnalysis, getOutbreakPrediction, OutbreakPrediction } from '../services/gemini';
+import { Bot, Loader2, Sparkles, UploadCloud, FileText, Heart, Leaf, Dumbbell, ShieldAlert, Activity, CheckCircle, BarChart, MapPin } from 'lucide-react';
 import { GoogleGeminiEffect } from '../components/GeminiEffect';
 import ReactMarkdown from 'react-markdown';
 
@@ -89,7 +89,7 @@ const AIInsightCard = ({ title, description }: { title: string, description: str
     );
 };
 
-// --- NEW AI PRESCRIPTION READER COMPONENT ---
+// --- AI PRESCRIPTION READER COMPONENT ---
 const AIPrescriptionReader = () => {
     const [file, setFile] = useState<File | null>(null);
     const [isLoading, setIsLoading] = useState(false);
@@ -177,6 +177,108 @@ const AIPrescriptionReader = () => {
     );
 };
 
+// --- AI HEALTH SENTINEL COMPONENT ---
+const AIHealthSentinel = () => {
+    const [location, setLocation] = useState('Bengaluru');
+    const [isLoading, setIsLoading] = useState(false);
+    const [prediction, setPrediction] = useState<OutbreakPrediction | null>(null);
+    const [error, setError] = useState<string | null>(null);
+    
+    const handleAnalyze = async () => {
+        setIsLoading(true);
+        setPrediction(null);
+        setError(null);
+        try {
+            const data = await getOutbreakPrediction(location);
+            setPrediction(data);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "An unknown error occurred.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    const riskColor = {
+        Low: 'text-green-400',
+        Moderate: 'text-yellow-400',
+        High: 'text-orange-400',
+        Critical: 'text-red-400',
+    };
+
+    return (
+         <div className="max-w-4xl mx-auto">
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+                <div className="relative flex-grow">
+                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-500" />
+                     <input 
+                         type="text"
+                         value={location}
+                         onChange={(e) => setLocation(e.target.value)}
+                         placeholder="Enter city or region"
+                         className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 pl-10"
+                     />
+                </div>
+                <button
+                    onClick={handleAnalyze}
+                    disabled={isLoading || !location}
+                    className="w-full md:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-teal-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50"
+                >
+                     {isLoading ? <Loader2 className="animate-spin" /> : <ShieldAlert />}
+                     {isLoading ? 'Analyzing Data...' : 'Run Analysis'}
+                </button>
+            </div>
+            
+             <div className="bg-neutral-900 border border-neutral-700 rounded-lg p-6 min-h-[200px]">
+                 <AnimatePresence mode="wait">
+                        {isLoading ? (
+                             <motion.div key="loading" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="flex flex-col items-center justify-center h-full text-neutral-400">
+                                 <Loader2 className="h-8 w-8 animate-spin mb-4" />
+                                 <p>Analyzing simulated health data for {location}...</p>
+                             </motion.div>
+                        ) : error ? (
+                             <motion.div key="error" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="flex flex-col items-center justify-center h-full text-red-400">
+                                <p>{error}</p>
+                            </motion.div>
+                        ) : prediction ? (
+                             <motion.div key="prediction" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="space-y-4">
+                                <div>
+                                    <span className="text-sm uppercase font-bold text-neutral-400">Risk Level</span>
+                                    <p className={`text-2xl font-bold ${riskColor[prediction.riskLevel]}`}>{prediction.riskLevel}</p>
+                                </div>
+                                 <div>
+                                    <span className="text-sm uppercase font-bold text-neutral-400">Potential Outbreak</span>
+                                    <p className="text-lg text-neutral-100">{prediction.emergingCondition}</p>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <h4 className="flex items-center gap-2 font-semibold text-neutral-300"><BarChart/> Key Indicators</h4>
+                                        <ul className="list-disc list-inside text-sm text-neutral-400 mt-1">
+                                            {prediction.keyIndicators.map(indicator => <li key={indicator}>{indicator}</li>)}
+                                        </ul>
+                                    </div>
+                                     <div>
+                                        <h4 className="flex items-center gap-2 font-semibold text-neutral-300"><CheckCircle/> Recommended Actions</h4>
+                                        <ul className="list-disc list-inside text-sm text-neutral-400 mt-1">
+                                            {prediction.recommendedActions.map(action => <li key={action}>{action}</li>)}
+                                        </ul>
+                                    </div>
+                                </div>
+                                 <div>
+                                    <span className="text-sm uppercase font-bold text-neutral-400">AI Summary</span>
+                                    <p className="text-sm text-neutral-300 mt-1">{prediction.summary}</p>
+                                </div>
+                             </motion.div>
+                        ) : (
+                             <motion.div key="initial" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="flex flex-col items-center justify-center h-full text-neutral-500">
+                                <p>Enter a location and run the analysis to predict potential health risks.</p>
+                            </motion.div>
+                        )}
+                 </AnimatePresence>
+            </div>
+         </div>
+    );
+};
+
 
 const AIHealthcarePage = () => {
   // Setup for first Gemini Effect
@@ -190,6 +292,13 @@ const AIHealthcarePage = () => {
   const ref2 = useRef(null);
   const { scrollYProgress: scrollYProgress2 } = useScroll({
     target: ref2,
+    offset: ["start end", "end start"],
+  });
+  
+  // Setup for third Gemini Effect
+  const ref3 = useRef(null);
+  const { scrollYProgress: scrollYProgress3 } = useScroll({
+    target: ref3,
     offset: ["start end", "end start"],
   });
 
@@ -272,6 +381,29 @@ const AIHealthcarePage = () => {
             </p>
           </div>
           <AIPrescriptionReader />
+        </div>
+
+        {/* Section 6: Gemini Animation 3 */}
+        <div ref={ref3} className="h-[300vh] relative">
+          <GoogleGeminiEffect
+            scrollYProgress={scrollYProgress3}
+            title="AI-Powered Health Sentinel"
+            description="Predicting local outbreaks before a crisis escalates"
+            className="top-0"
+          />
+        </div>
+        
+        {/* Section 7: AI Health Sentinel */}
+        <div className="container mx-auto px-4 py-20 relative z-10 bg-black">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400">
+               AI-Powered Health Sentinel
+            </h2>
+            <p className="mt-4 text-lg text-neutral-400 max-w-3xl mx-auto">
+              By analyzing sudden spikes in patient data or unusual drug consumption, Synergy’s AI can predict local outbreaks early and alert hospitals and authorities before a crisis escalates.
+            </p>
+          </div>
+          <AIHealthSentinel />
         </div>
 
       </main>
