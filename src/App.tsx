@@ -13,7 +13,7 @@ import PharmacyPage from './pages/PharmacyPage';
 import HomeCarePage from './pages/HomeCarePage';
 import TelehealthPage from './pages/TelehealthPage';
 import Ambulance from './pages/Ambulance';
-import AIHealthcarePage from './pages/AIHealthcarePage'; // Import the new page
+import CuraPage from './pages/CuraPage'; // Import the new page
 import ArticlePage from './pages/ArticlePage';
 import { Chatbot } from './components/Chatbot';
 
@@ -75,7 +75,7 @@ function App() {
             </Route>
             
             {/* The AI pages are separate and do NOT use the DefaultLayout */}
-            <Route path="ai-healthcare" element={<AIHealthcarePage />} />
+            <Route path="cura" element={<CuraPage />} />
             <Route path="article/:slug" element={<ArticlePage />} />
           </Routes>
         </Router>

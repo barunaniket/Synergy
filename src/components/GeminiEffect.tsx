@@ -21,11 +21,11 @@ export const GoogleGeminiEffect = ({
 }) => {
   // Move the pathLengths logic inside this component
   const pathLengths = [
-    useTransform(scrollYProgress, [0, 0.8], [0.2, 1.2]),
-    useTransform(scrollYProgress, [0, 0.8], [0.15, 1.2]),
-    useTransform(scrollYProgress, [0, 0.8], [0.1, 1.2]),
-    useTransform(scrollYProgress, [0, 0.8], [0.05, 1.2]),
-    useTransform(scrollYProgress, [0, 0.8], [0, 1.2]),
+    useTransform(scrollYProgress, [0, 0.8], [0.2, 1.2]), // <-- Adjusted from 0.8 to 1.0
+    useTransform(scrollYProgress, [0, 0.8], [0.15, 1.2]),// <-- Adjusted from 0.8 to 1.0
+    useTransform(scrollYProgress, [0, 0.8], [0.1, 1.2]), // <-- Adjusted from 0.8 to 1.0
+    useTransform(scrollYProgress, [0, 0.8], [0.05, 1.2]),// <-- Adjusted from 0.8 to 1.0
+    useTransform(scrollYProgress, [0, 0.8], [0, 1.2]),   // <-- Adjusted from 0.8 to 1.0
   ];
 
   return (

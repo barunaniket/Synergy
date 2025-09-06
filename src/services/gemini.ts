@@ -70,6 +70,13 @@ export interface OutbreakPrediction {
     summary: string;
 }
 
+// --- NEW: Define the structure for a Smart Alert ---
+export interface SmartAlert {
+    drugName: string;
+    baselineForecast: string;
+    contextAnalysis: string;
+    recommendation: string;
+}
 
 /**
  * Generates a summary from an uploaded medical document image.
@@ -106,7 +113,7 @@ export const getSummaryFromImage = async (image: File): Promise<string> => {
                                 {
                                     type: "image_url",
                                     image_url: {
-                                        "url": `data:${image.type};base64,${base64Image.inlineData?.data}`
+                                        "url": `data:${base64Image.inlineData?.data}`
                                     }
                                 },
                             ],
@@ -436,18 +443,21 @@ export const getChatbotResponse = async (history: Content[]): Promise<string> =>
 export const getHealthcareInsight = async (topic: string): Promise<string> => {
     console.log("Requesting AI insight for topic:", topic);
     const prompt = `
-        You are an expert AI in healthcare technology and logistics.
-        A user wants to learn more about a specific topic related to improving the healthcare supply chain.
+        You are an expert AI in healthcare technology. A user wants to learn more about a specific topic.
 
         **Topic:** "${topic}"
 
         **Your Task:**
-        - Provide a detailed, easy-to-understand explanation of the topic.
-        - Explain *how* AI specifically helps with this.
-        - Give a real-world example or scenario.
-        - Keep the tone professional but accessible.
-        - Use Markdown for formatting (bolding, bullet points).
-        - The entire response should be around 100-150 words.
+        - Provide a concise, easy-to-understand explanation (under 80 words).
+        - Use Markdown for formatting (bolding key terms).
+        - Start with a direct definition of how AI helps.
+        - Conclude with a simple, real-world example.
+        - The tone should be professional but very clear and accessible.
+
+        **Example for a different topic:**
+        "AI enhances **Real-time Supply Chain Visibility** by using algorithms to track medical supplies from the factory to the hospital. It can instantly detect unusual delays or route changes.
+
+        ***For example:*** If a shipment of vaccines is stuck in transit, the system can proactively alert managers and even reroute another nearby shipment to prevent a shortage."
     `;
     try {
         const result = await model.generateContent(prompt);
@@ -545,5 +555,72 @@ export const getOutbreakPrediction = async (location: string): Promise<OutbreakP
     } catch (error) {
         console.error("Error getting outbreak prediction from Gemini:", error);
         throw new Error("Failed to generate a prediction. Please try again.");
+    }
+};
+
+// --- NEW FUNCTION for Smart Stock Forecasting ---
+export const getSmartAlert = async (drugName: string): Promise<SmartAlert> => {
+    console.log("Requesting smart alert for drug:", drugName);
+    const prompt = `
+        You are a hybrid AI combining a traditional forecasting model with an LLM for contextual analysis.
+        A user has requested a smart forecast for a specific drug.
+
+        **Drug for Analysis:** ${drugName}
+
+        **Your Task:**
+        Generate a plausible, fictional "Smart Alert" by completing the following tasks and returning them in a structured JSON object.
+
+        1.  **Create a Baseline Forecast**: Invent a reasonable monthly usage number for this drug. (e.g., "Standard monthly need of 500 units.").
+        2.  **Generate a Contextual Analysis**: Create a fictional scenario based on simulated external data. Invent 2-3 plausible external events that would impact the demand for this specific drug. For example, if the drug is Remdesivir, you could mention a new COVID-19 subvariant. If it's an antibiotic, a contaminated water source.
+        3.  **Formulate a Recommendation**: Based on the context, provide a clear, actionable recommendation. It should suggest a specific action, like increasing an order, and a reason. (e.g., "We recommend increasing the next order to 800 units to build a buffer for the anticipated demand spike.").
+
+        **IMPORTANT**: Your response MUST be ONLY a valid JSON object matching the structure below.
+
+        **JSON Structure:**
+        {
+          "drugName": "${drugName}",
+          "baselineForecast": "string",
+          "contextAnalysis": "string",
+          "recommendation": "string"
+        }
+    `;
+
+    try {
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        console.log("AI Smart Alert Raw Response:", text);
+        const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        return JSON.parse(cleanedText);
+    } catch (error) {
+        console.error("Error generating Smart Alert from Gemini:", error);
+        throw new Error("Failed to generate the forecast. Please try again.");
+    }
+};
+
+// --- NEW FUNCTION for Sentinel Analysis from Chart Data ---
+export const getSentinelAnalysis = async (data: string): Promise<string> => {
+    console.log("Requesting Sentinel analysis for data:", data);
+    const prompt = `
+        You are the "AI-Powered Health Sentinel". You have been provided with the following time-series data regarding patient symptoms and drug consumption in a specific region.
+
+        **Data:**
+        \`\`\`json
+        ${data}
+        \`\`\`
+
+        **Your Task:**
+        Analyze the trends in the data and provide a conversational, insightful summary as if you are a chatbot.
+        - Start by stating the most critical observation.
+        - Point out the correlation between the rising symptoms and the consumption of specific drugs.
+        - Conclude with a clear, concise recommendation for public health authorities.
+        - Keep the entire response under 100 words. Use Markdown for emphasis.
+    `;
+
+    try {
+        const result = await model.generateContent(prompt);
+        return result.response.text();
+    } catch (error) {
+        console.error("Error generating Sentinel analysis:", error);
+        return "An error occurred while analyzing the data. Please try again.";
     }
 };
