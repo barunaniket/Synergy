@@ -1,16 +1,17 @@
+// src/pages/CuraPage.tsx
+
 import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { FloatingDockNav } from '../components/FloatingDockNav';
 import { AIFooter } from '../components/AIFooter';
-import { getHealthcareInsight, getPrescriptionAnalysis, PrescriptionAnalysis, getSentinelAnalysis } from '../services/gemini';
-import { Bot, Loader2, Sparkles, UploadCloud, FileText, Heart, Leaf, Dumbbell, ShieldAlert, CheckCircle, BarChart } from 'lucide-react';
+import { getHealthcareInsight, getPrescriptionAnalysis, PrescriptionAnalysis, getOutbreakPrediction, OutbreakPrediction, getSmartAlert, SmartAlert } from '../services/gemini';
+import { Bot, Loader2, Sparkles, UploadCloud, FileText, Heart, Leaf, Dumbbell, ShieldAlert, Activity, CheckCircle, BarChart, MapPin, Pill, TrendingUp, Bell } from 'lucide-react';
 import { GoogleGeminiEffect } from '../components/GeminiEffect';
 import ReactMarkdown from 'react-markdown';
 import { BackgroundLines } from '../components/BackgroundLines';
-import { mockHealthData } from '../data/mockHealthData';
-import BarGraph from '../components/BarGraph';
+import ForecastGraph from '../components/ForecastGraph'; // Import the new graph component
 
-// --- Data for the interactive cards (MOVED TO CORRECT LOCATION) ---
+// --- Data for the interactive cards ---
 const insightTopics = [
     {
         title: "Predictive Analytics for Demand Forecasting",
@@ -47,7 +48,7 @@ const AIInsightCard = ({ title, description }: { title: string, description: str
     };
 
     return (
-        <motion.div
+        <motion.div 
             layout
             className="bg-neutral-900 border border-neutral-700 rounded-lg p-6 flex flex-col"
             initial={{ opacity: 0, y: 20 }}
@@ -56,7 +57,7 @@ const AIInsightCard = ({ title, description }: { title: string, description: str
         >
             <h3 className="text-xl font-bold text-neutral-100">{title}</h3>
             <p className="text-neutral-400 mt-2 flex-grow">{description}</p>
-            <button
+            <button 
                 onClick={fetchInsight}
                 disabled={isLoading}
                 className="mt-4 w-full flex items-center justify-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 font-semibold py-2 px-4 rounded-md transition-colors disabled:opacity-50"
@@ -120,6 +121,7 @@ const AIPrescriptionReader = () => {
     return (
         <div className="max-w-4xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                {/* Upload Section */}
                 <div className="flex flex-col items-center">
                     <label htmlFor="prescription-upload" className="w-full relative cursor-pointer bg-neutral-900 border-2 border-dashed border-neutral-700 rounded-lg flex flex-col items-center justify-center p-10 hover:border-primary transition-colors">
                         <UploadCloud className="h-12 w-12 mb-4 text-neutral-500" />
@@ -130,6 +132,8 @@ const AIPrescriptionReader = () => {
                     <input id="prescription-upload" type="file" className="sr-only" onChange={handleFileChange} accept="image/*" disabled={isLoading} />
                     <p className="text-xs text-neutral-500 mt-4">Your data is processed securely and is not stored.</p>
                 </div>
+
+                {/* Results Section */}
                 <div className="bg-neutral-900 border border-neutral-700 rounded-lg p-6 min-h-[200px]">
                     <AnimatePresence mode="wait">
                         {isLoading ? (
@@ -143,6 +147,7 @@ const AIPrescriptionReader = () => {
                             </motion.div>
                         ) : analysis ? (
                              <motion.div key="results" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="space-y-6">
+                                {/* Medications */}
                                 <div>
                                     <h4 className="flex items-center gap-2 text-lg font-bold text-neutral-100"><FileText/> Medications Identified</h4>
                                     <ul className="mt-2 space-y-2">
@@ -154,6 +159,7 @@ const AIPrescriptionReader = () => {
                                         ))}
                                     </ul>
                                 </div>
+                                {/* Guidance */}
                                 <div>
                                     <h4 className="flex items-center gap-2 text-lg font-bold text-neutral-100"><Heart/> Holistic Guidance</h4>
                                     <div className="mt-2 space-y-2 text-sm">
@@ -175,78 +181,224 @@ const AIPrescriptionReader = () => {
     );
 };
 
-// --- AI HEALTH SENTINEL WITH CHARTS ---
+// --- AI HEALTH SENTINEL COMPONENT ---
 const AIHealthSentinel = () => {
+    const [location, setLocation] = useState('Bengaluru');
     const [isLoading, setIsLoading] = useState(false);
-    const [analysis, setAnalysis] = useState("");
+    const [prediction, setPrediction] = useState<OutbreakPrediction | null>(null);
     const [error, setError] = useState<string | null>(null);
-
+    
     const handleAnalyze = async () => {
         setIsLoading(true);
-        setAnalysis("");
+        setPrediction(null);
         setError(null);
         try {
-            const dataString = JSON.stringify(mockHealthData, null, 2);
-            const result = await getSentinelAnalysis(dataString);
-            setAnalysis(result);
+            const data = await getOutbreakPrediction(location);
+            setPrediction(data);
         } catch (err) {
             setError(err instanceof Error ? err.message : "An unknown error occurred.");
         } finally {
             setIsLoading(false);
         }
     };
+    
+    const riskColor = {
+        Low: 'text-green-400',
+        Moderate: 'text-yellow-400',
+        High: 'text-orange-400',
+        Critical: 'text-red-400',
+    };
 
     return (
-        <div className="max-w-4xl mx-auto">
-            <div className="mb-8">
-                <h3 className="text-lg font-semibold text-neutral-300 mb-2 text-center">Daily Patient Volume - Bengaluru</h3>
-                <BarGraph data={mockHealthData} />
-            </div>
-            <div className="flex flex-col items-center">
+         <div className="max-w-4xl mx-auto">
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+                <div className="relative flex-grow">
+                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-500" />
+                     <input 
+                         type="text"
+                         value={location}
+                         onChange={(e) => setLocation(e.target.value)}
+                         placeholder="Enter city or region"
+                         className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 pl-10"
+                     />
+                </div>
                 <button
                     onClick={handleAnalyze}
-                    disabled={isLoading}
+                    disabled={isLoading || !location}
                     className="w-full md:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-teal-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50"
                 >
                      {isLoading ? <Loader2 className="animate-spin" /> : <ShieldAlert />}
-                     {isLoading ? 'Analyzing Data...' : 'Ask AI for Insights'}
+                     {isLoading ? 'Analyzing Data...' : 'Run Analysis'}
                 </button>
-                <AnimatePresence>
-                    {analysis && (
-                        <motion.div 
-                            className="w-full mt-8 bg-neutral-900 border border-neutral-700 rounded-lg p-6"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                        >
-                            <div className="prose prose-invert prose-sm text-neutral-300">
-                                <ReactMarkdown>{analysis}</ReactMarkdown>
-                            </div>
-                        </motion.div>
-                    )}
-                    {error && <p className="mt-4 text-red-400">{error}</p>}
-                </AnimatePresence>
             </div>
-        </div>
+            
+             <div className="bg-neutral-900 border border-neutral-700 rounded-lg p-6 min-h-[200px]">
+                 <AnimatePresence mode="wait">
+                        {isLoading ? (
+                             <motion.div key="loading" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="flex flex-col items-center justify-center h-full text-neutral-400">
+                                 <Loader2 className="h-8 w-8 animate-spin mb-4" />
+                                 <p>Analyzing simulated health data for {location}...</p>
+                             </motion.div>
+                        ) : error ? (
+                             <motion.div key="error" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="flex flex-col items-center justify-center h-full text-red-400">
+                                <p>{error}</p>
+                            </motion.div>
+                        ) : prediction ? (
+                             <motion.div key="prediction" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="space-y-4">
+                                <div>
+                                    <span className="text-sm uppercase font-bold text-neutral-400">Risk Level</span>
+                                    <p className={`text-2xl font-bold ${riskColor[prediction.riskLevel]}`}>{prediction.riskLevel}</p>
+                                </div>
+                                 <div>
+                                    <span className="text-sm uppercase font-bold text-neutral-400">Potential Outbreak</span>
+                                    <p className="text-lg text-neutral-100">{prediction.emergingCondition}</p>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <h4 className="flex items-center gap-2 font-semibold text-neutral-300"><BarChart/> Key Indicators</h4>
+                                        <ul className="list-disc list-inside text-sm text-neutral-400 mt-1">
+                                            {prediction.keyIndicators.map(indicator => <li key={indicator}>{indicator}</li>)}
+                                        </ul>
+                                    </div>
+                                     <div>
+                                        <h4 className="flex items-center gap-2 font-semibold text-neutral-300"><CheckCircle/> Recommended Actions</h4>
+                                        <ul className="list-disc list-inside text-sm text-neutral-400 mt-1">
+                                            {prediction.recommendedActions.map(action => <li key={action}>{action}</li>)}
+                                        </ul>
+                                    </div>
+                                </div>
+                                 <div>
+                                    <span className="text-sm uppercase font-bold text-neutral-400">AI Summary</span>
+                                    <p className="text-sm text-neutral-300 mt-1">{prediction.summary}</p>
+                                </div>
+                             </motion.div>
+                        ) : (
+                             <motion.div key="initial" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="flex flex-col items-center justify-center h-full text-neutral-500">
+                                <p>Enter a location and run the analysis to predict potential health risks.</p>
+                            </motion.div>
+                        )}
+                 </AnimatePresence>
+            </div>
+         </div>
+    );
+};
+
+// --- AI STOCK FORECASTING COMPONENT ---
+const AIStockForecasting = () => {
+    const [drug, setDrug] = useState('Remdesivir');
+    const [isLoading, setIsLoading] = useState(false);
+    const [alert, setAlert] = useState<SmartAlert | null>(null);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleForecast = async () => {
+        setIsLoading(true);
+        setAlert(null);
+        setError(null);
+        try {
+            const data = await getSmartAlert(drug);
+            setAlert(data);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "An unknown error occurred.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    
+    return (
+        <div className="max-w-4xl mx-auto">
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+                <div className="relative flex-grow">
+                     <Pill className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-neutral-500" />
+                     <select 
+                         value={drug}
+                         onChange={(e) => setDrug(e.target.value)}
+                         className="w-full bg-neutral-900 border border-neutral-700 rounded-lg p-3 pl-10 appearance-none"
+                     >
+                         <option>Remdesivir</option>
+                         <option>Oseltamivir (Tamiflu)</option>
+                         <option>Amoxicillin</option>
+                         <option>Ibuprofen</option>
+                     </select>
+                </div>
+                <button
+                    onClick={handleForecast}
+                    disabled={isLoading}
+                    className="w-full md:w-auto flex items-center justify-center gap-2 bg-primary hover:bg-teal-600 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50"
+                >
+                     {isLoading ? <Loader2 className="animate-spin" /> : <TrendingUp />}
+                     {isLoading ? 'Forecasting...' : 'Generate Forecast'}
+                </button>
+            </div>
+            
+             <div className="bg-neutral-900 border border-neutral-700 rounded-lg p-6 min-h-[200px]">
+                 <AnimatePresence mode="wait">
+                        {isLoading ? (
+                             <motion.div key="loading" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="flex flex-col items-center justify-center h-full text-neutral-400">
+                                 <Loader2 className="h-8 w-8 animate-spin mb-4" />
+                                 <p>Generating smart forecast for {drug}...</p>
+                             </motion.div>
+                        ) : error ? (
+                             <motion.div key="error" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="flex flex-col items-center justify-center h-full text-red-400">
+                                <p>{error}</p>
+                            </motion.div>
+                        ) : alert ? (
+                             <motion.div key="alert" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="space-y-4">
+                               <h3 className="text-xl font-bold text-center text-yellow-400 flex items-center justify-center gap-2"><Bell /> Smart Alert: Prophylactic Action Recommended for {alert.drugName}</h3>
+                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
+                                   <div className="bg-neutral-800 p-4 rounded-lg">
+                                       <p className="text-sm font-bold text-neutral-400">Baseline Forecast</p>
+                                       <p className="text-lg text-neutral-100">{alert.baselineForecast}</p>
+                                   </div>
+                                    <div className="bg-neutral-800 p-4 rounded-lg">
+                                       <p className="text-sm font-bold text-neutral-400">Recommendation</p>
+                                       <p className="text-lg text-neutral-100">{alert.recommendation}</p>
+                                   </div>
+                               </div>
+                               <div>
+                                   <h4 className="font-semibold text-neutral-300">AI Context Analysis:</h4>
+                                   <p className="text-sm text-neutral-400 mt-1">{alert.contextAnalysis}</p>
+                               </div>
+                               {/* -- THIS IS THE LINE THAT RENDERS THE GRAPH -- */}
+                               {alert.forecastData && <ForecastGraph data={alert.forecastData} />}
+                             </motion.div>
+                        ) : (
+                             <motion.div key="initial" initial={{opacity: 0}} animate={{opacity: 1}} exit={{opacity: 0}} className="flex flex-col items-center justify-center h-full text-neutral-500">
+                                <p>Select a drug and generate a forecast to see a smart alert.</p>
+                            </motion.div>
+                        )}
+                 </AnimatePresence>
+            </div>
+         </div>
     );
 };
 
 
 const CuraPage = () => {
+  // Setup for first Gemini Effect
   const ref1 = useRef(null);
   const { scrollYProgress: scrollYProgress1 } = useScroll({
     target: ref1,
     offset: ["start end", "end start"],
   });
   
+  // Setup for second Gemini Effect
   const ref2 = useRef(null);
   const { scrollYProgress: scrollYProgress2 } = useScroll({
     target: ref2,
     offset: ["start end", "end start"],
   });
   
+  // Setup for third Gemini Effect
   const ref3 = useRef(null);
   const { scrollYProgress: scrollYProgress3 } = useScroll({
     target: ref3,
+    offset: ["start end", "end start"],
+  });
+  
+  // Setup for fourth Gemini Effect
+  const ref4 = useRef(null);
+  const { scrollYProgress: scrollYProgress4 } = useScroll({
+    target: ref4,
     offset: ["start end", "end start"],
   });
 
@@ -262,6 +414,7 @@ const CuraPage = () => {
       <BackgroundLines />
       <FloatingDockNav />
       <main className="relative z-10">
+        {/* Section 1: Hero Title */}
         <div className="h-screen w-full flex flex-col items-center justify-center text-center p-4">
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
@@ -281,6 +434,7 @@ const CuraPage = () => {
           </motion.p>
         </div>
 
+        {/* Section 2: Gemini Animation 1 */}
         <div ref={ref1} className="h-[300vh] relative">
           <GoogleGeminiEffect
             scrollYProgress={scrollYProgress1}
@@ -290,6 +444,7 @@ const CuraPage = () => {
           />
         </div>
 
+        {/* Section 3: Interactive AI Content */}
         <div className="container mx-auto px-4 py-20 relative z-10 bg-black">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400">
@@ -306,6 +461,7 @@ const CuraPage = () => {
           </div>
         </div>
         
+        {/* Section 4: Gemini Animation 2 */}
         <div ref={ref2} className="h-[300vh] relative">
           <GoogleGeminiEffect
             scrollYProgress={scrollYProgress2}
@@ -315,6 +471,7 @@ const CuraPage = () => {
           />
         </div>
         
+        {/* Section 5: AI Prescription Reader */}
         <div className="container mx-auto px-4 py-20 relative z-10 bg-black">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400">
@@ -327,6 +484,7 @@ const CuraPage = () => {
           <AIPrescriptionReader />
         </div>
 
+        {/* Section 6: Gemini Animation 3 */}
         <div ref={ref3} className="h-[300vh] relative">
           <GoogleGeminiEffect
             scrollYProgress={scrollYProgress3}
@@ -336,16 +494,40 @@ const CuraPage = () => {
           />
         </div>
         
+        {/* Section 7: AI Health Sentinel */}
         <div className="container mx-auto px-4 py-20 relative z-10 bg-black">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400">
                AI-Powered Health Sentinel
             </h2>
             <p className="mt-4 text-lg text-neutral-400 max-w-3xl mx-auto">
-              By analyzing trends in patient data, Synergy’s AI can predict local outbreaks early and alert authorities before a crisis escalates.
+              By analyzing sudden spikes in patient data or unusual drug consumption, Synergy’s AI can predict local outbreaks early and alert hospitals and authorities before a crisis escalates.
             </p>
           </div>
           <AIHealthSentinel />
+        </div>
+        
+        {/* Section 8: Gemini Animation 4 */}
+        <div ref={ref4} className="h-[300vh] relative">
+          <GoogleGeminiEffect
+            scrollYProgress={scrollYProgress4}
+            title="Smart Stock Forecasting"
+            description="Transforming inventory from a reactive tool into a proactive, intelligent partner"
+            className="top-0"
+          />
+        </div>
+        
+        {/* Section 9: AI Stock Forecasting */}
+        <div className="container mx-auto px-4 py-20 relative z-10 bg-black">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400">
+               Smart Stock & Medicine Forecasting
+            </h2>
+            <p className="mt-4 text-lg text-neutral-400 max-w-3xl mx-auto">
+              Our hybrid AI combines forecasting models with contextual analysis from news and global events to generate actionable alerts, preventing shortages before they happen.
+            </p>
+          </div>
+          <AIStockForecasting />
         </div>
 
       </main>
