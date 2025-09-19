@@ -39,35 +39,25 @@ const values = [
 
 const teamMembers = [
     {
-        name: 'Mr. Aniket Barun',
-        title: 'Lead Designing',
-        imageUrl: 'https://media.licdn.com/dms/image/v2/D4E03AQEGxqhUnuJx1w/profile-displayphoto-shrink_800_800/B4EZahk_z6HMAc-/0/1746467553305?e=1759968000&v=beta&t=b2veD_5X1vifZA9G9F-M0aDva0An0DAvFgbQXXQ1nP0'
+        name: 'Mr. Krishna H Zalavadiya',
+        title: 'Developer',
+        imageUrl: './mrd.jpg'
     },
     {
         name: 'Mr. Kishan Bhardwaj',
-        title: 'Lead Technologist',
-        imageUrl: 'https://images.unsplash.com/photo-1556157382-97eda2d62296?q=80&w=2070&auto=format&fit=crop'
+        title: 'Developer',
+        imageUrl: './ksihan.jpg'
     },
     {
         name: 'Mr. Naivadh Shrivastava',
-        title: 'Head of Hospital Relations',
-        imageUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=1887&auto=format&fit=crop'
+        title: 'Developer',
+        imageUrl: './navy.jpg'
     },
     {
-        name: 'Mr. Krishna H Zalavadiya',
-        title: 'Head of Hospital Relations',
-        imageUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=1887&auto=format&fit=crop'
+        name: 'Mr. Aniket Barun',
+        title: 'Developer',
+        imageUrl: './aniket.jpeg'
     },
-    {
-        name: 'Mr. Ayush Kumar',
-        title: 'Head of Hospital Relations',
-        imageUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=1887&auto=format&fit=crop'
-    },
-    {
-        name: 'Mr. Bismun Singh',
-        title: 'Head of Hospital Relations',
-        imageUrl: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=1887&auto=format&fit=crop'
-    }
 ];
 
 const testimonials = [

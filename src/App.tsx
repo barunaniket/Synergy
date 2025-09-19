@@ -1,3 +1,5 @@
+// src/App.tsx
+
 import { BrowserRouter as Router, Routes, Route, Outlet } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import Footer from './components/Footer';
@@ -13,9 +15,10 @@ import PharmacyPage from './pages/PharmacyPage';
 import HomeCarePage from './pages/HomeCarePage';
 import TelehealthPage from './pages/TelehealthPage';
 import Ambulance from './pages/Ambulance';
-import CuraPage from './pages/CuraPage'; // Import the new page
+import CuraPage from './pages/CuraPage';
 import ArticlePage from './pages/ArticlePage';
 import { Chatbot } from './components/Chatbot';
+import LoginPage from './pages/LoginPage'; // <-- 1. IMPORT THE NEW PAGE
 
 // This Layout is for all pages EXCEPT the AI pages
 const DefaultLayout = () => {
@@ -72,6 +75,7 @@ function App() {
               <Route path="home-visit" element={<HomeCarePage />} />
               <Route path="telehealth" element={<TelehealthPage />} />
               <Route path="ambulance" element={<Ambulance />} />
+              <Route path="login" element={<LoginPage />} /> {/* <-- 2. ADD THE NEW ROUTE */}
             </Route>
             
             {/* The AI pages are separate and do NOT use the DefaultLayout */}

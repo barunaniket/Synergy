@@ -16,7 +16,7 @@ function Footer() {
             <div className="space-y-2 text-sm text-text-secondary">
               <p className="flex items-start">
                 <span className="mt-1 mr-3 flex-shrink-0 text-text-primary"><MapPin size={14} /></span>
-                <span>123 Health St, MedCity, MC 54321, United States</span>
+                <span>Table 15, PES UNIVERSITY, RR Campus</span>
               </p>
               <p className="flex items-start">
                 <span className="mt-1 mr-3 flex-shrink-0 text-text-primary"><Mail size={14} /></span>
@@ -24,7 +24,7 @@ function Footer() {
               </p>
               <p className="flex items-start">
                 <span className="mt-1 mr-3 flex-shrink-0 text-text-primary"><Phone size={14} /></span>
-                 <a href="tel:+15551234567" className="hover:text-primary">+1 (555) 123-4567</a>
+                 <a href="tel:+15551234567" className="hover:text-primary">+91 965-123-4567</a>
               </p>
             </div>
             <div className="flex space-x-4 pt-2">

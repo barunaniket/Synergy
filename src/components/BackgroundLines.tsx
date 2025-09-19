@@ -18,7 +18,7 @@ export const BackgroundLines = () => {
               patternUnits="userSpaceOnUse"
             >
               {/* Corrected stroke opacity for visibility */}
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255, 255, 255, 0.25)" strokeWidth="0.5"></path>
+              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255, 255, 255, 0.35)" strokeWidth="0.5"></path>
             </pattern>
           </defs>
           <rect width="100%" height="100%" fill="url(#grid)"></rect>
