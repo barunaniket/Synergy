@@ -49,11 +49,6 @@ const teamMembers = [
         imageUrl: './ksihan.jpg'
     },
     {
-        name: 'Mr. Naivadh Shrivastava',
-        title: 'Developer',
-        imageUrl: './navy.jpg'
-    },
-    {
         name: 'Mr. Aniket Barun',
         title: 'Developer',
         imageUrl: './aniket.jpeg'

@@ -1,9 +1,22 @@
 from fastapi import FastAPI, Form
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 import json
 from app.inference import predict_and_build_json
 
 app = FastAPI(title="MediAI ML", version="ml-v0.1")
+
+origins = [
+    "http://localhost:5173",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.post("/analyze")
 async def analyze(
