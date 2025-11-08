@@ -43,7 +43,7 @@ const productCategories = [
     { name: "Vitamins & Supplements", image: "https://images.unsplash.com/photo-1683394572742-1e471f60fc2a?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
     { name: "Personal Care", image: "https://plus.unsplash.com/premium_photo-1661597206779-b6643eac8213?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
     { name: "Baby & Mom Care", image: "https://images.unsplash.com/photo-1724667593663-54c6bb73e7ce?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
-    { name: "Medical Devices", image: "https://images.unsplash.com/photo-1654512041772-446bd165a3b3?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" },
+    { name: "Medical Devices", image: "https://images.unsplash.com/photo-1700832082200-af7deeb63d9b?ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mzh8fG1lZGljYWwlMjBkZXZpY2V8ZW58MHx8MHx8fDA%3D&auto=format&fit=crop&q=60&w=600" },
 ];
 const featuredProducts = [
     { name: "Omega-3 Fish Oil", price: "24.99", rating: 4.8, image: "https://images.pexels.com/photos/208518/pexels-photo-208518.jpeg" },

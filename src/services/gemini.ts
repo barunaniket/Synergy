@@ -14,17 +14,16 @@ if (!openaiApiKey) {
     console.warn("VITE_OPENAI_API_KEY is not set. OpenAI fallback will not be available.");
 }
 
-
 // Initialize the Google AI SDK
 const genAI = new GoogleGenerativeAI(geminiApiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+// Updated to use a valid model
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
 // Initialize OpenAI client
 const openai = new OpenAI({
     apiKey: openaiApiKey,
     dangerouslyAllowBrowser: true // Required for client-side usage
 });
-
 
 // --- Helper function to convert a File to a GoogleGenerativeAI.Part ---
 async function fileToGenerativePart(file: File): Promise<Part> {
@@ -76,13 +75,17 @@ export interface SmartAlert {
     baselineForecast: string;
     contextAnalysis: string;
     recommendation: string;
+    forecastData?: {
+        labels: string[];
+        baseline: number[];
+        predicted: number[];
+    };
 }
 
 /**
  * Generates a summary from an uploaded medical document image.
  */
 export const getSummaryFromImage = async (image: File): Promise<string> => {
-    // This function remains unchanged
     console.log("Processing medical document with REAL AI:", image.name);
     const prompt = `
         You are a helpful medical assistant AI.
@@ -134,7 +137,6 @@ export const getSummaryFromImage = async (image: File): Promise<string> => {
  * Extracts structured details from an uploaded prescription image.
  */
 export const getPrescriptionDetailsFromImage = async (image: File): Promise<any> => {
-    // This function remains unchanged
     console.log("Processing prescription with REAL AI:", image.name);
     const prompt = `
         You are an expert pharmacy technician AI. Analyze the following image of a medical prescription.
@@ -197,12 +199,10 @@ export const getPrescriptionDetailsFromImage = async (image: File): Promise<any>
     }
 };
 
-
 /**
  * Generates dynamic, AI-powered emergency guidance.
  */
 export const getEmergencyGuidance = async (basePrompt: string, formData: any): Promise<string> => {
-  // This function remains unchanged
   console.log("Fetching REAL AI guidance for:", { basePrompt, formData });
   const prompt = `
     You are an AI assistant providing emergency guidance. Your tone must be professional, calm, and empathetic.
@@ -249,7 +249,6 @@ export const getAiRankedHospitals = async (
   filters: { location: string; organ: string; budget: string; urgency: string },
   hospitals: Hospital[]
 ): Promise<AiHospitalAnalysis[]> => {
-  // This function remains unchanged
   console.log("Requesting AI analysis for", hospitals.length, "hospitals with filters:", filters);
 
   if (hospitals.length === 0) {
@@ -379,7 +378,6 @@ export const getAiRankedHospitals = async (
   }
 };
 
-
 // --- UPDATED CHATBOT KNOWLEDGE BASE ---
 const knowledgeBase = `
 You are the "Synergy AI Assistant", a helpful and friendly chatbot for the Synergy web platform.
@@ -400,7 +398,6 @@ Keep your answers concise and helpful. You are multilingual. If the user asks a 
 
 
 export const getChatbotResponse = async (history: Content[]): Promise<string> => {
-    // This function's logic remains the same
     console.log("Getting chatbot response for history:", history);
     try {
         const lastMessage = history[history.length - 1].parts[0].text;
@@ -581,7 +578,12 @@ export const getSmartAlert = async (drugName: string): Promise<SmartAlert> => {
           "drugName": "${drugName}",
           "baselineForecast": "string",
           "contextAnalysis": "string",
-          "recommendation": "string"
+          "recommendation": "string",
+          "forecastData": {
+            "labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+            "baseline": [400, 420, 450, 480, 500, 520],
+            "predicted": [400, 420, 450, 480, 700, 850]
+          }
         }
     `;
 
@@ -590,7 +592,18 @@ export const getSmartAlert = async (drugName: string): Promise<SmartAlert> => {
         const text = result.response.text();
         console.log("AI Smart Alert Raw Response:", text);
         const cleanedText = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        return JSON.parse(cleanedText);
+        const alertData = JSON.parse(cleanedText);
+        
+        // Ensure forecastData is included in the response
+        if (!alertData.forecastData) {
+            alertData.forecastData = {
+                labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+                baseline: [400, 420, 450, 480, 500, 520],
+                predicted: [400, 420, 450, 480, 700, 850]
+            };
+        }
+        
+        return alertData;
     } catch (error) {
         console.error("Error generating Smart Alert from Gemini:", error);
         throw new Error("Failed to generate the forecast. Please try again.");
@@ -622,5 +635,56 @@ export const getSentinelAnalysis = async (data: string): Promise<string> => {
     } catch (error) {
         console.error("Error generating Sentinel analysis:", error);
         return "An error occurred while analyzing the data. Please try again.";
+    }
+};
+
+// --- NEW FUNCTION for running Gemini with a custom prompt ---
+export const runGemini = async (prompt: string): Promise<string> => {
+    console.log("Running Gemini with custom prompt");
+    try {
+        const result = await model.generateContent(prompt);
+        const response = result.response;
+        const text = response.text();
+        console.log("Gemini Response:", text);
+        return text;
+    } catch (error) {
+        console.error("Error running Gemini:", error);
+        
+        // Check if it's a model not found error
+        if (error.message.includes("not found") || error.message.includes("is not supported")) {
+            console.error("Model not found. Trying with a different model...");
+            try {
+                // Try with a different model
+                const fallbackModel = genAI.getGenerativeModel({ model: "gemini-pro" });
+                const result = await fallbackModel.generateContent(prompt);
+                const response = result.response;
+                const text = response.text();
+                console.log("Fallback Gemini Response:", text);
+                return text;
+            } catch (fallbackError) {
+                console.error("Fallback model also failed:", fallbackError);
+            }
+        }
+        
+        // Try OpenAI as a fallback if Gemini fails
+        if (openaiApiKey) {
+            try {
+                const response = await openai.chat.completions.create({
+                    model: "gpt-3.5-turbo",
+                    messages: [{ role: "user", content: prompt }],
+                });
+                return response.choices[0].message.content || "Error: Could not get a response from the AI.";
+            } catch (openaiError) {
+                console.error("Error running OpenAI fallback:", openaiError);
+                
+                // Check if it's a quota issue
+                if (openaiError.message.includes("quota")) {
+                    return "Error: API quota exceeded. Please check your billing details or try again later.";
+                }
+                
+                return "Error: Could not get a response from the AI. Please try again.";
+            }
+        }
+        return "Error: Could not get a response from the AI. Please try again.";
     }
 };

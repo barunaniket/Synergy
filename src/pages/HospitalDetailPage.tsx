@@ -22,7 +22,7 @@ const allHospitals: Hospital[] = [
     waitTime: 120,
     availableOrgans: ['Heart', 'Lung'],
     estimatedCost: 150000,
-    image: 'https://lh3.googleusercontent.com/p/AF1QipMJc-AVIYBlr29F49J60od25n86Xe9rUM0kKWwS=s1360-w1360-h1020-rw',
+    image: '/kauvery.jpg',
   },
   {
     id: 3,
@@ -32,7 +32,7 @@ const allHospitals: Hospital[] = [
     waitTime: 45,
     availableOrgans: ['Kidney', 'Pancreas', 'Liver'],
     estimatedCost: 62000,
-    image: 'https://lh3.googleusercontent.com/gps-cs-s/AC9h4npn6XUSNH-gR6D-9Kz6vRVr33_P25xu6kOWORhKPxV3A3dYnOecNwxXWiETDs70_isW-uWuvPauoRWj4zNinJ57CnGsYw8AtbxF9OOzqwR-Yz8WHnKcQMydxs_31Pt88zaFIVBRCA=s1360-w1360-h1020-rw',
+    image: '/location-bg-road.png',
   },
   {
     id: 4,
@@ -42,7 +42,7 @@ const allHospitals: Hospital[] = [
     waitTime: 150,
     availableOrgans: ['Lung'],
     estimatedCost: 125000,
-    image: 'https://lh3.googleusercontent.com/gps-cs-s/AC9h4nocNjfNGKtenJs7p1K_B_-IX0q16IslKGNn8r28BMrbbIcIg0KpAd9MdTLitRHBxpHoWJEexLlU_uWYO04fPKBkTIGZsS2iQKeIVOyOyITaVbtd2EcOLUVBcLpl4E-QlUuFpx8=s1360-w1360-h1020-rw',
+    image: '/Assets-01.jpg',
   },
   {
     id: 5,
@@ -52,7 +52,7 @@ const allHospitals: Hospital[] = [
     waitTime: 90,
     availableOrgans: ['Kidney', 'Liver'],
     estimatedCost: 75000,
-    image: 'https://lh3.googleusercontent.com/p/AF1QipM7AQrfv060jLrF9AlQSqVarhchPT1u5lJ9ZK_n=s1360-w1360-h1020-rw',
+    image: '/About_US.png',
   },
   {
     id: 6,
@@ -332,7 +332,7 @@ const allHospitals: Hospital[] = [
     waitTime: 120,
     availableOrgans: ['Kidney', 'Liver', 'Pancreas'],
     estimatedCost: 230000,
-    image: 'https://www.practo.com/consumer-ui/_next/image?url=https%3A%2F%2Fimages1-fabric.practo.com%2Fpractices%2F1444411%2Fgem-hospital-chennai-658a78e057a5c.jpeg&w=3840&q=75',
+    image: 'image_750x_63e09e2837c1b.jpg',
   },
   {
     id: 34,
@@ -342,7 +342,7 @@ const allHospitals: Hospital[] = [
     waitTime: 95,
     availableOrgans: ['Kidney', 'Liver', 'Heart', 'Lungs'],
     estimatedCost: 275000,
-    image: 'https://www.practo.com/consumer-ui/_next/image?url=https%3A%2F%2Fimages1-fabric.practo.com%2Fpractices%2F1224581%2Fdr-rela-institute-medical-centre-chennai-5f4f3ad26df0d.jpg&w=3840&q=75',
+    image: 'rela-hospital-airport-bedroom2-chrompet-ac-kitchen-wiifi-chennai-pic-5.jpeg',
   },
   {
     id: 35,

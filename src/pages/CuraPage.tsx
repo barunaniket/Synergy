@@ -1,17 +1,369 @@
-// src/pages/CuraPage.tsx
-
 import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { FloatingDockNav } from '../components/FloatingDockNav';
 import { AIFooter } from '../components/AIFooter';
-import { getHealthcareInsight, getPrescriptionAnalysis, PrescriptionAnalysis, getOutbreakPrediction, OutbreakPrediction, getSmartAlert, SmartAlert } from '../services/gemini';
-import { Bot, Loader2, Sparkles, UploadCloud, FileText, Heart, Leaf, Dumbbell, ShieldAlert, Activity, CheckCircle, BarChart, MapPin, Pill, TrendingUp, Bell } from 'lucide-react';
+import { getHealthcareInsight, getPrescriptionAnalysis, PrescriptionAnalysis, getOutbreakPrediction, OutbreakPrediction, getSmartAlert, SmartAlert, runGemini } from '../services/gemini';
+import { Bot, Loader2, Sparkles, UploadCloud, FileText, Heart, Leaf, Dumbbell, ShieldAlert, Activity, CheckCircle, BarChart, MapPin, Pill, TrendingUp, Bell, ChefHat } from 'lucide-react';
 import { GoogleGeminiEffect } from '../components/GeminiEffect';
 import ReactMarkdown from 'react-markdown';
 import { BackgroundLines } from '../components/BackgroundLines';
-import ForecastGraph from '../components/ForecastGraph'; // Import the new graph component
+import ForecastGraph from '../components/ForecastGraph';
 
-// --- Data for the interactive cards ---
+// --- NEW COMPONENT: NutritionPredictor ---
+const NutritionPredictor: React.FC = () => {
+  // State for form inputs
+  const [formData, setFormData] = useState({
+    age: '',
+    gender: 'Male', // Default value
+    height: '',
+    weight: '',
+    activity: 'Moderately active', // Default value
+    goal: 'Maintain weight', // Default value - renamed from weightPlan
+    meals: '3', // Default value
+  });
+
+  // State for handling results
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [recommendations, setRecommendations] = useState<any>(null); // Changed to any type for structured data
+  const [finalMeals, setFinalMeals] = useState<any>(null); // New state for final LLM-processed meals
+  const [llmLoading, setLlmLoading] = useState(false); // New loading state for LLM processing
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  // Function to format ingredients from string array to readable list
+  const formatIngredients = (ingredients: string | string[]) => {
+    if (typeof ingredients === 'string') {
+      // Handle case where ingredients might be a string representation of an array
+      try {
+        const parsed = JSON.parse(ingredients.replace(/c\(|\)/g, ''));
+        if (Array.isArray(parsed)) {
+          return parsed.map(item => item.replace(/"/g, '')).join(', ');
+        }
+      } catch (e) {
+        // If parsing fails, return string as is
+        return ingredients;
+      }
+    } else if (Array.isArray(ingredients)) {
+      return ingredients.join(', ');
+    }
+    return ingredients;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setRecommendations(null);
+    setFinalMeals(null);
+
+    try {
+      // --- Step 1: Call your Python AI Predictor Backend ---
+      // Updated to use correct endpoint and field names
+      const response = await fetch('http://127.0.0.1:8080/recommend', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        // Send data in the format your Python app expects
+        body: JSON.stringify({
+          age: parseInt(formData.age, 10),
+          gender: formData.gender,
+          height: parseFloat(formData.height),
+          weight: parseFloat(formData.weight),
+          activity: formData.activity,
+          goal: formData.goal, // Changed from weightPlan to goal
+          meals: parseInt(formData.meals, 10),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(`AI model server error: ${errorData}`);
+      }
+
+      const data = await response.json();
+      
+      // Check if response contains an error message
+      if (data.error) {
+        throw new Error(data.error);
+      }
+      
+      // Store structured response
+      setRecommendations(data);
+      
+      // --- Step 2: Send recommended meals to LLM ---
+      if (data.recommended_meals && data.recommended_meals.length > 0) {
+        setLlmLoading(true);
+        
+        // Create a prompt for LLM to select top 3 healthiest meals
+        const llmPrompt = `
+          From the following list of meals, please select the top 3 healthiest options based on nutritional balance, 
+          natural ingredients, and overall health benefits. Return your answer as a JSON array with the following structure:
+          
+          [
+            {
+              "name": "Meal Name",
+              "calories": number,
+              "protein": number,
+              "fat": number,
+              "carbs": number,
+              "ingredients": "Formatted ingredient list",
+              "healthScore": number (1-100),
+              "healthBenefits": "Brief description of health benefits"
+            }
+          ]
+          
+          Here is the list of meals:
+          ${JSON.stringify(data.recommended_meals)}
+          
+          Please analyze each meal's nutritional profile and ingredients to determine the healthiest options. 
+          Consider factors like protein content, fiber, vitamins, and natural ingredients.
+        `;
+        
+        try {
+          const llmResponse = await runGemini(llmPrompt);
+          
+          // Try to parse JSON response
+          try {
+            // Check if the response starts with an error message
+            if (llmResponse.startsWith("Error:")) {
+              throw new Error(llmResponse);
+            }
+            
+            // Try to extract JSON from the response
+            let jsonMatch = llmResponse.match(/```json\s*([\s\S]*?)\s*```/);
+            if (!jsonMatch) {
+              // Try to find JSON without code blocks
+              jsonMatch = llmResponse.match(/\[[\s\S]*\]/);
+            }
+            
+            if (!jsonMatch) {
+              throw new Error("No valid JSON found in the response");
+            }
+            
+            const jsonString = jsonMatch[1] || jsonMatch[0];
+            const topMeals = JSON.parse(jsonString);
+            setFinalMeals(topMeals);
+          } catch (parseError) {
+            console.error("Error parsing LLM response:", parseError);
+            console.error("Original LLM response:", llmResponse);
+            
+            // If parsing fails, use the original meals
+            setFinalMeals(data.recommended_meals.slice(0, 3).map((meal: any) => ({
+              ...meal,
+              ingredients: formatIngredients(meal.ingredients),
+              healthScore: 75, // Default score
+              healthBenefits: "A nutritious option with balanced macronutrients."
+            })));
+          }
+        } catch (llmError) {
+          console.error("Error calling LLM:", llmError);
+          
+          // If LLM call fails, use the original meals
+          setFinalMeals(data.recommended_meals.slice(0, 3).map((meal: any) => ({
+            ...meal,
+            ingredients: formatIngredients(meal.ingredients),
+            healthScore: 75, // Default score
+            healthBenefits: "A nutritious option with balanced macronutrients."
+          })));
+        } finally {
+          setLlmLoading(false);
+        }
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'An unknown error occurred. Make sure the AI predictor server is running.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto p-8 rounded-lg shadow-xl bg-gray-900/50 backdrop-blur-md border border-gray-700">
+      <h2 className="text-3xl font-bold text-center text-white mb-6">
+        AI Nutritional Advisor
+      </h2>
+      
+      {/* --- Prediction Form --- */}
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Age */}
+        <div>
+          <label htmlFor="age" className="block text-sm font-medium text-gray-300 mb-1">Age</label>
+          <input type="number" name="age" id="age" value={formData.age} onChange={handleChange} className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white" required />
+        </div>
+        {/* Gender */}
+        <div>
+          <label htmlFor="gender" className="block text-sm font-medium text-gray-300 mb-1">Gender</label>
+          <select name="gender" id="gender" value={formData.gender} onChange={handleChange} className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white" required>
+            <option>Male</option>
+            <option>Female</option>
+          </select>
+        </div>
+        {/* Height */}
+        <div>
+          <label htmlFor="height" className="block text-sm font-medium text-gray-300 mb-1">Height (cm)</label>
+          <input type="number" step="0.1" name="height" id="height" value={formData.height} onChange={handleChange} className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white" required />
+        </div>
+        {/* Weight */}
+        <div>
+          <label htmlFor="weight" className="block text-sm font-medium text-gray-300 mb-1">Weight (kg)</label>
+          <input type="number" step="0.1" name="weight" id="weight" value={formData.weight} onChange={handleChange} className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white" required />
+        </div>
+        {/* Activity Level */}
+        <div>
+          <label htmlFor="activity" className="block text-sm font-medium text-gray-300 mb-1">Activity Level</label>
+          <select name="activity" id="activity" value={formData.activity} onChange={handleChange} className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white" required>
+            <option>Little/no exercise</option>
+            <option>Lightly active</option>
+            <option>Moderately active</option>
+            <option>Very active</option>
+            <option>Extra active</option>
+          </select>
+        </div>
+        {/* Weight Goal */}
+        <div>
+          <label htmlFor="goal" className="block text-sm font-medium text-gray-300 mb-1">Weight Goal</label>
+          <select name="goal" id="goal" value={formData.goal} onChange={handleChange} className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white" required>
+            <option>Lose weight</option>
+            <option>Maintain weight</option>
+            <option>Gain weight</option>
+          </select>
+        </div>
+        {/* Number of Meals */}
+        <div className="md:col-span-2">
+          <label htmlFor="meals" className="block text-sm font-medium text-gray-300 mb-1">Number of Meals</label>
+          <select name="meals" id="meals" value={formData.meals} onChange={handleChange} className="w-full p-2 bg-gray-800 border border-gray-700 rounded text-white" required>
+            <option value="3">3 meals</option>
+            <option value="4">4 meals</option>
+            <option value="5">5 meals</option>
+          </select>
+        </div>
+        
+        {/* Submit Button */}
+        <div className="md:col-span-2">
+          <button
+            type="submit"
+            className="w-full py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all duration-300 disabled:opacity-50"
+            disabled={loading || llmLoading}
+          >
+            {loading ? 'Analyzing...' : llmLoading ? 'Selecting Healthiest Options...' : 'Get Recommendations'}
+          </button>
+        </div>
+      </form>
+
+      {/* --- Results Display Area --- */}
+      <div className="mt-8">
+        {loading && (
+          <div className="text-center text-blue-400">
+            <p>Loading... Contacting AI models.</p>
+          </div>
+        )}
+        {error && (
+          <div className="p-4 bg-red-900/50 border border-red-700 rounded-lg text-red-300">
+            <strong>Error:</strong> {error}
+          </div>
+        )}
+        {recommendations && !finalMeals && (
+          <div className="text-center text-blue-400">
+            <p>Analyzing meal options...</p>
+          </div>
+        )}
+        {finalMeals && (
+          <div className="p-6 bg-gray-800/60 border border-gray-700 rounded-lg">
+            <h3 className="text-2xl font-semibold text-white mb-4">Your Personalized Nutrition Plan</h3>
+            
+            {/* Display Nutrition Summary */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-gray-700 p-4 rounded-lg">
+                <h4 className="text-lg font-semibold text-blue-400">Daily Calories</h4>
+                <p className="text-2xl font-bold text-white">{recommendations.predicted_calories} kcal</p>
+                <p className="text-sm text-gray-300">Target per meal: {recommendations.per_meal_target} kcal</p>
+              </div>
+              <div className="bg-gray-700 p-4 rounded-lg">
+                <h4 className="text-lg font-semibold text-green-400">Protein</h4>
+                <p className="text-2xl font-bold text-white">{recommendations.macros.protein}g</p>
+                <p className="text-sm text-gray-300">Daily target</p>
+              </div>
+              <div className="bg-gray-700 p-4 rounded-lg">
+                <h4 className="text-lg font-semibold text-yellow-400">Fat / Carbs</h4>
+                <p className="text-2xl font-bold text-white">{recommendations.macros.fat}g / {recommendations.macros.carbs}g</p>
+                <p className="text-sm text-gray-300">Daily target</p>
+              </div>
+            </div>
+            
+            {/* Display Top 3 Healthiest Meals */}
+            <div>
+              <h4 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
+                <ChefHat className="h-5 w-5" />
+                Top 3 Healthiest Meal Recommendations
+              </h4>
+              <div className="space-y-4">
+                {finalMeals.map((meal: any, index: number) => (
+                  <div key={index} className="bg-gray-700 p-4 rounded-lg border border-gray-600">
+                    <div className="flex justify-between items-start mb-2">
+                      <h5 className="text-lg font-medium text-white">{meal.name}</h5>
+                      {meal.healthScore && (
+                        <div className="bg-green-600 text-white text-xs px-2 py-1 rounded-full">
+                          Health Score: {meal.healthScore}/100
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3 text-sm">
+                      <div className="bg-gray-800 p-2 rounded text-center">
+                        <span className="text-gray-400">Calories</span>
+                        <p className="font-semibold text-white">{meal.calories} kcal</p>
+                      </div>
+                      <div className="bg-gray-800 p-2 rounded text-center">
+                        <span className="text-gray-400">Protein</span>
+                        <p className="font-semibold text-green-400">{meal.protein}g</p>
+                      </div>
+                      <div className="bg-gray-800 p-2 rounded text-center">
+                        <span className="text-gray-400">Fat</span>
+                        <p className="font-semibold text-yellow-400">{meal.fat}g</p>
+                      </div>
+                      <div className="bg-gray-800 p-2 rounded text-center">
+                        <span className="text-gray-400">Carbs</span>
+                        <p className="font-semibold text-blue-400">{meal.carbs}g</p>
+                      </div>
+                    </div>
+                    
+                    <div className="mb-3">
+                      <p className="text-sm font-medium text-gray-300 mb-1">Ingredients:</p>
+                      <p className="text-sm text-gray-400">
+                        {formatIngredients(meal.ingredients)}
+                      </p>
+                    </div>
+                    
+                    {meal.healthBenefits && (
+                      <div>
+                        <p className="text-sm font-medium text-gray-300 mb-1">Health Benefits:</p>
+                        <p className="text-sm text-gray-400">{meal.healthBenefits}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// --- Data for interactive cards ---
 const insightTopics = [
     {
         title: "Predictive Analytics for Demand Forecasting",
@@ -372,7 +724,7 @@ const AIStockForecasting = () => {
     );
 };
 
-
+// --- Main CuraPage Component ---
 const CuraPage = () => {
   // Setup for first Gemini Effect
   const ref1 = useRef(null);
@@ -414,6 +766,19 @@ const CuraPage = () => {
       <BackgroundLines />
       <FloatingDockNav />
       <main className="relative z-10">
+        {/* NEW SECTION: Nutrition Predictor */}
+        <div className="container mx-auto px-4 py-20 pt-40">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400">
+              AI Nutritional Advisor
+            </h2>
+            <p className="mt-4 text-lg text-neutral-400 max-w-3xl mx-auto">
+              Get personalized nutrition recommendations based on your health profile and goals.
+            </p>
+          </div>
+          <NutritionPredictor />
+        </div>
+
         {/* Section 1: Hero Title */}
         <div className="h-screen w-full flex flex-col items-center justify-center text-center p-4">
           <motion.h1 
@@ -501,7 +866,7 @@ const CuraPage = () => {
                AI-Powered Health Sentinel
             </h2>
             <p className="mt-4 text-lg text-neutral-400 max-w-3xl mx-auto">
-              By analyzing sudden spikes in patient data or unusual drug consumption, Synergy’s AI can predict local outbreaks early and alert hospitals and authorities before a crisis escalates.
+              By analyzing sudden spikes in patient data or unusual drug consumption, Synergy's AI can predict local outbreaks early and alert hospitals and authorities before a crisis escalates.
             </p>
           </div>
           <AIHealthSentinel />
